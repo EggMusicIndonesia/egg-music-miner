@@ -1,18 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Music Miner</title>
+    <title>Egg Music Miner</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #player { margin: 0 auto; border: 2px solid #ccc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
+        #player { border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 100%; max-width: 640px; margin: 20px auto; }
+        .status { color: #00ff00; font-size: 0.9em; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>Egg Music Miner</h1>
-    <p>Player sedang dimuat...</p>
+    <h2>Egg Music Miner 🥚</h2>
+    <p id="user-info">Memuat data user...</p>
+    
     <div id="player"></div>
+    <div id="status-db" class="status"></div>
 
     <script>
+        // 1. Inisialisasi Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Biar layar penuh
+        const user = tg.initDataUnsafe?.user;
+        
+        if (user) {
+            document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name;
+        }
+
+        // 2. Inisialisasi Supabase (GANTI DENGAN URL & KEY ANDA)
+        const SUPABASE_URL = "ISI_URL_SUPABASE_ANDA";
+        const SUPABASE_KEY = "ISI_KEY_ANON_PUBLIC_ANDA";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 3. Inisialisasi YouTube Player
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -27,9 +47,34 @@
                 events: { 'onStateChange': onPlayerStateChange }
             });
         }
-        function onPlayerStateChange(event) {
+
+        async function onPlayerStateChange(event) {
+            // Jika video SELESAI (ENDED)
             if (event.data == YT.PlayerState.ENDED) {
-                alert("Tugas selesai!");
+                document.getElementById('status-db').innerText = "Lagu selesai! Mencatat poin...";
+                
+                if (user) {
+                    // KIRIM DATA KE SUPABASE
+                    const { data, error } = await supabase
+                        .from('user_progress')
+                        .insert([
+                            { 
+                                telegram_id: user.id, 
+                                username: user.username,
+                                song_id: 'oO6ZfaIMhog',
+                                completed_at: new Date()
+                            }
+                        ]);
+
+                    if (error) {
+                        alert("Gagal mencatat: " + error.message);
+                    } else {
+                        tg.showAlert("Selamat! Poin mining berhasil masuk ke akunmu.");
+                        tg.close(); // Tutup WebApp otomatis setelah selesai
+                    }
+                } else {
+                    alert("User ID tidak terdeteksi!");
+                }
             }
         }
     </script>
