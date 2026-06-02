@@ -15,7 +15,21 @@ bot.start(async (ctx) => {
         ctx.reply('Halo lagi! Tambang terus Egg Music Anda!');
     }
 });
+bot.command('tugas', async (ctx) => {
+    const { data: tasks, error } = await supabase.from('tasks').select('*');
+    
+    if (error) {
+        ctx.reply("Gagal mengambil daftar tugas.");
+        return;
+    }
 
+    let message = "🎵 **Daftar Tugas Listen/Watch to Earn:**\n\n";
+    tasks.forEach(t => {
+        message += `✅ *${t.title}*\nPlatform: ${t.platform}\nPoin: ${t.points}\nLink: ${t.url}\n\n`;
+    });
+    
+    ctx.reply(message, { parse_mode: 'Markdown' });
+});
 module.exports = async (req, res) => {
     try {
         await bot.handleUpdate(req.body);
