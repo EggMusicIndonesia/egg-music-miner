@@ -7,7 +7,7 @@
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
         .card { background: #1e1e1e; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
-        button { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
+        button { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
         #done-btn { background: #00ff00; color: black; display: none; }
     </style>
 </head>
@@ -22,20 +22,22 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
         
+        // Inisialisasi Supabase
         const supabase = window.supabase.createClient(
             'https://tawqbyyzckcdmdluhxis.supabase.co', 
             'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
         );
 
         document.getElementById('listen-btn').addEventListener('click', () => {
-            window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank');
+            // METODE RESMI TELEGRAM
+            tg.openLink('https://www.youtube.com/watch?v=oO6ZfaIMhog');
             document.getElementById('done-btn').style.display = 'block';
             document.getElementById('status').innerText = "Sudah nonton? Klik selesai!";
         });
 
         document.getElementById('done-btn').addEventListener('click', async () => {
+            const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
             const { error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, 
                 username: user.username,
