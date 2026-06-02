@@ -12,23 +12,22 @@
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
-    <p id="user-info">Memuat data user...</p>
+    <p id="user-info">Menyiapkan player...</p>
     <div id="player"></div>
     <div id="status-db" class="status"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const user = tg.initDataUnsafe?.user;
-
-        // 1. Tampilkan nama user jika ada
-        if (user) { 
-            document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name; 
-        } else {
-            document.getElementById('user-info').innerText = "Buka melalui Telegram untuk mining!";
+        
+        // Coba ambil user, kalau tidak ada, pakai ID Dummy untuk testing agar tetap jalan
+        let user = tg.initDataUnsafe?.user;
+        if (!user) {
+            console.log("Data user kosong, menggunakan mode guest");
+            user = { id: 0, first_name: "Guest", username: "guest" };
         }
+        document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name;
 
-        // 2. Inisialisasi Supabase dengan data asli Anda
         const supabase = window.supabase.createClient(
             'https://tawqbyyzckcdmdluhxis.supabase.co', 
             'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
@@ -48,19 +47,15 @@
 
         async function onPlayerStateChange(event) {
             if (event.data == YT.PlayerState.ENDED) {
-                document.getElementById('status-db').innerText = "Lagu selesai! Mencatat poin...";
-                if (user) {
-                    const { error } = await supabase.from('user_progress').insert([{
-                        telegram_id: user.id, 
-                        username: user.username,
-                        song_id: 'oO6ZfaIMhog', 
-                        completed_at: new Date()
-                    }]);
-                    if (error) alert("Gagal mencatat: " + error.message);
-                    else { tg.showAlert("Selamat! Poin berhasil masuk."); tg.close(); }
-                } else {
-                    alert("User tidak terdeteksi, poin tidak bisa dicatat.");
-                }
+                document.getElementById('status-db').innerText = "Mencatat poin...";
+                const { error } = await supabase.from('user_progress').insert([{
+                    telegram_id: user.id, 
+                    username: user.username,
+                    song_id: 'oO6ZfaIMhog', 
+                    completed_at: new Date()
+                }]);
+                if (error) alert("Gagal catat: " + error.message);
+                else { tg.showAlert("Success! Poin masuk."); tg.close(); }
             }
         }
     </script>
