@@ -1,54 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Egg Music Miner</title>
+    <title>Debug Mode</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        .card { background: #1e1e1e; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
-        button { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        #done-btn { background: #00ff00; color: black; display: none; }
+        button { background: #007bff; color: white; padding: 20px; border-radius: 10px; border: none; font-size: 18px; }
     </style>
 </head>
 <body>
-    <h2>Egg Music Miner 🥚</h2>
-    <div class="card">
-        <p id="status">Tonton video untuk menambang</p>
-        <button id="listen-btn">DENGARKAN LAGU</button>
-        <button id="done-btn">SAYA SUDAH SELESAI NONTON</button>
-    </div>
+    <h2>Uji Tombol</h2>
+    <button id="test-btn">KLIK SAYA UNTUK TES</button>
+    <p id="output">Belum diklik</p>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
-        const supabase = window.supabase.createClient(
-            'https://tawqbyyzckcdmdluhxis.supabase.co', 
-            'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
-        );
-
-        // Menggunakan Event Listener (Lebih stabil di Telegram)
-        document.getElementById('listen-btn').addEventListener('click', function() {
-            window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank');
-            document.getElementById('done-btn').style.display = 'block';
-            document.getElementById('status').innerText = "Sudah nonton? Klik selesai!";
-        });
-
-        document.getElementById('done-btn').addEventListener('click', async function() {
-            const { error } = await supabase.from('user_progress').insert([{
-                telegram_id: user.id, 
-                username: user.username,
-                song_id: 'oO6ZfaIMhog', 
-                completed_at: new Date().toISOString()
-            }]);
-            
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                tg.showAlert("Poin berhasil masuk!");
-                tg.close();
-            }
+        document.getElementById('test-btn').addEventListener('click', function() {
+            document.getElementById('output').innerText = "JS BERHASIL BERJALAN!";
+            alert("JS Anda berfungsi dengan baik!");
         });
     </script>
 </body>
