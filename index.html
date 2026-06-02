@@ -3,52 +3,24 @@
 <head>
     <title>Egg Music Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        #player-container { margin: 20px auto; width: 100%; max-width: 640px; }
-        #player { width: 100%; height: 360px; border-radius: 12px; background: #000; }
+        .song-card { background: #1e1e1e; padding: 15px; margin: 10px; border-radius: 10px; }
+        button { background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
-    <p id="user-info">Memuat...</p>
-    <div id="player-container"><div id="player"></div></div>
+    <p>Pilih lagu untuk mulai menambang:</p>
+    
+    <div class="song-card">
+        <p>Surat Yang Tak Sampai</p>
+        <button onclick="window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank')">DENGARKAN</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
-        const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
-        document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name;
-
-        const supabase = window.supabase.createClient(
-            'https://tawqbyyzckcdmdluhxis.supabase.co', 
-            'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
-        );
-
-        function onYouTubeIframeAPIReady() {
-            console.log("YouTube API Ready");
-            new YT.Player('player', {
-                videoId: 'oO6ZfaIMhog',
-                events: {
-                    'onStateChange': (event) => {
-                        if (event.data === YT.PlayerState.ENDED) {
-                            supabase.from('user_progress').insert([{
-                                telegram_id: user.id, 
-                                username: user.username,
-                                song_id: 'oO6ZfaIMhog', 
-                                completed_at: new Date()
-                            }]).then(({ error }) => {
-                                if (error) console.error(error);
-                                else { tg.showAlert("Success! Poin masuk."); tg.close(); }
-                            });
-                        }
-                    }
-                }
-            });
-        }
     </script>
 </body>
 </html>
