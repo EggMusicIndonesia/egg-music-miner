@@ -7,17 +7,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        #player { border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 100%; max-width: 640px; margin: 20px auto; }
+        #player-container { margin: 20px auto; width: 100%; max-width: 640px; }
+        #player { width: 100%; height: 360px; border-radius: 12px; background: #000; }
     </style>
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
     <p id="user-info">Memuat...</p>
-    <div id="player"></div>
+    <div id="player-container"><div id="player"></div></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
         const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
         document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name;
 
@@ -26,18 +28,22 @@
             'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
         );
 
-        // Fungsi ini dipanggil otomatis oleh YouTube API
         function onYouTubeIframeAPIReady() {
+            console.log("YouTube API Ready");
             new YT.Player('player', {
-                height: '360', width: '640', videoId: 'oO6ZfaIMhog',
+                videoId: 'oO6ZfaIMhog',
                 events: {
-                    'onReady': () => document.getElementById('user-info').innerText = "Player Siap!",
                     'onStateChange': (event) => {
-                        if (event.data == YT.PlayerState.ENDED) {
+                        if (event.data === YT.PlayerState.ENDED) {
                             supabase.from('user_progress').insert([{
-                                telegram_id: user.id, username: user.username,
-                                song_id: 'oO6ZfaIMhog', completed_at: new Date()
-                            }]).then(() => { tg.showAlert("Success! Poin masuk."); tg.close(); });
+                                telegram_id: user.id, 
+                                username: user.username,
+                                song_id: 'oO6ZfaIMhog', 
+                                completed_at: new Date()
+                            }]).then(({ error }) => {
+                                if (error) console.error(error);
+                                else { tg.showAlert("Success! Poin masuk."); tg.close(); }
+                            });
                         }
                     }
                 }
