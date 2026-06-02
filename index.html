@@ -7,38 +7,38 @@
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
         .card { background: #1e1e1e; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
-        .btn-listen { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-done { background: #00ff00; color: black; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px; }
+        button { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
+        #done-btn { background: #00ff00; color: black; }
     </style>
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
     <div class="card">
-        <p>Surat Yang Tak Sampai</p>
-        <button class="btn-listen" onclick="window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank')">
-            DENGARKAN
-        </button>
-        <button class="btn-done" onclick="saveProgress()">
-            SAYA SUDAH SELESAI
-        </button>
+        <p id="status">Surat Yang Tak Sampai</p>
+        <button id="listen-btn" onclick="openVideo()">DENGARKAN</button>
+        <button id="done-btn" onclick="saveProgress()">SAYA SUDAH SELESAI</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
-        
         const supabase = window.supabase.createClient(
             'https://tawqbyyzckcdmdluhxis.supabase.co', 
             'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
         );
+
+        function openVideo() {
+            window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank');
+            document.getElementById('status').innerText = "Sudah nonton? Klik selesai!";
+        }
 
         async function saveProgress() {
             const { error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, 
                 username: user.username,
                 song_id: 'oO6ZfaIMhog', 
-                completed_at: new Date()
+                completed_at: new Date().toISOString()
             }]);
             
             if (error) {
