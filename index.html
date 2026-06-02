@@ -6,17 +6,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        .card { background: #1e1e1e; padding: 20px; margin: 10px auto; border-radius: 15px; max-width: 300px; }
-        button { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
-        #done-btn { background: #00ff00; color: black; margin-top: 10px; display: none; }
+        .card { background: #1e1e1e; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
+        .btn-listen { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-done { background: #00ff00; color: black; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
     <div class="card">
         <p>Surat Yang Tak Sampai</p>
-        <button id="play-btn" onclick="startMining()">DENGARKAN</button>
-        <button id="done-btn" onclick="saveProgress()">SAYA SUDAH SELESAI</button>
+        <button class="btn-listen" onclick="window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank')">
+            DENGARKAN
+        </button>
+        <button class="btn-done" onclick="saveProgress()">
+            SAYA SUDAH SELESAI
+        </button>
     </div>
 
     <script>
@@ -29,11 +33,6 @@
             'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
         );
 
-        function startMining() {
-            window.Telegram.WebApp.openLink('https://www.youtube.com/watch?v=oO6ZfaIMhog');
-            document.getElementById('done-btn').style.display = 'block';
-        }
-
         async function saveProgress() {
             const { error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, 
@@ -42,8 +41,12 @@
                 completed_at: new Date()
             }]);
             
-            if (error) alert("Gagal catat: " + error.message);
-            else { tg.showAlert("Success! Poin berhasil masuk."); tg.close(); }
+            if (error) {
+                alert("Gagal catat: " + error.message);
+            } else {
+                tg.showAlert("Success! Poin berhasil masuk.");
+                tg.close();
+            }
         }
     </script>
 </body>
