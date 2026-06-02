@@ -33,3 +33,14 @@ module.exports = async (req, res) => {
         return res.status(500).send('Error');
     }
 };
+// Ganti bagian ctx.reply lama dengan ini:
+ctx.reply("Pilih tugas untuk mulai menambang:", {
+  reply_markup: {
+    inline_keyboard: [[
+      {
+        text: "Tonton Tugas",
+        web_app: { url: "https://egg-music-miner.vercel.app/index.html" }
+      }
+    ]]
+  }
+});
