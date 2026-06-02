@@ -8,42 +8,69 @@
         body { margin: 0; padding: 0; background: #000; color: white; font-family: sans-serif; text-align: center; }
         iframe { width: 100%; height: 50vh; border: none; }
         .container { padding: 20px; }
-        button { background: #2ecc71; color: white; border: none; padding: 15px; border-radius: 10px; width: 80%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        button { background: #555; color: #ccc; border: none; padding: 15px; border-radius: 10px; width: 80%; font-size: 16px; font-weight: bold; cursor: not-allowed; margin-top: 20px; }
+        button.active { background: #2ecc71; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
-    <iframe src="https://www.youtube.com/embed/oO6ZfaIMhog?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    <iframe id="video-frame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     
     <div class="container">
-        <p id="status">Tonton video sampai selesai!</p>
-        <button id="claim-btn" onclick="claimPoints()">KLAIM POIN SEKARANG</button>
+        <p id="status">Tunggu durasi lagu habis untuk klaim...</p>
+        <button id="claim-btn" disabled>TUNGGU DURASI HABIS...</button>
     </div>
     
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
+        // Ambil song_id dari URL (contoh: ?song_id=oO6ZfaIMhog)
+        const urlParams = new URLSearchParams(window.location.search);
+        const songId = urlParams.get('song_id') || 'oO6ZfaIMhog'; 
+        
+        document.getElementById('video-frame').src = `https://www.youtube.com/embed/${songId}?autoplay=1`;
+
         const supabase = window.supabase.createClient(
             'https://tawqbyyzckcdmdluhxis.supabase.co', 
             'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
         );
 
+        const btn = document.getElementById('claim-btn');
+        const status = document.getElementById('status');
+        
+        // Timer 211 detik (3 menit 31 detik)
+        let timeLeft = 211;
+        const timer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                btn.disabled = false;
+                btn.className = 'active';
+                btn.innerText = 'KLAIM POIN SEKARANG';
+                btn.onclick = claimPoints;
+                status.innerText = 'Durasi selesai! Silakan klaim poin Anda.';
+            } else {
+                btn.innerText = 'TUNGGU ' + timeLeft + ' DETIK...';
+            }
+        }, 1000);
+
         async function claimPoints() {
             const user = tg.initDataUnsafe?.user || { id: 0, username: "guest" };
-            document.getElementById('claim-btn').innerText = "Memproses...";
+            btn.innerText = "Memproses...";
             
             const { error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, 
                 username: user.username || "guest",
-                song_id: 'oO6ZfaIMhog', 
+                song_id: songId, 
                 completed_at: new Date().toISOString()
             }]);
             
             if (error) {
                 alert("Gagal: " + error.message);
-                document.getElementById('claim-btn').innerText = "KLAIM POIN SEKARANG";
+                btn.innerText = "KLAIM POIN SEKARANG";
             } else {
-                document.getElementById('status').innerText = "Sukses! Poin berhasil masuk.";
-                document.getElementById('claim-btn').style.display = 'none';
+                status.innerText = "Sukses! Poin berhasil masuk.";
+                btn.style.display = 'none';
                 tg.showAlert("Poin berhasil masuk!");
             }
         }
