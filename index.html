@@ -20,10 +20,19 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const user = tg.initDataUnsafe?.user;
-        if (user) { document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name; }
 
-        // Ganti dengan URL & Key dari dashboard Supabase Anda
-        const supabase = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
+        // 1. Tampilkan nama user jika ada
+        if (user) { 
+            document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name; 
+        } else {
+            document.getElementById('user-info').innerText = "Buka melalui Telegram untuk mining!";
+        }
+
+        // 2. Inisialisasi Supabase dengan data asli Anda
+        const supabase = window.supabase.createClient(
+            'https://tawqbyyzckcdmdluhxis.supabase.co', 
+            'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
+        );
 
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -42,11 +51,15 @@
                 document.getElementById('status-db').innerText = "Lagu selesai! Mencatat poin...";
                 if (user) {
                     const { error } = await supabase.from('user_progress').insert([{
-                        telegram_id: user.id, username: user.username,
-                        song_id: 'oO6ZfaIMhog', completed_at: new Date()
+                        telegram_id: user.id, 
+                        username: user.username,
+                        song_id: 'oO6ZfaIMhog', 
+                        completed_at: new Date()
                     }]);
                     if (error) alert("Gagal mencatat: " + error.message);
                     else { tg.showAlert("Selamat! Poin berhasil masuk."); tg.close(); }
+                } else {
+                    alert("User tidak terdeteksi, poin tidak bisa dicatat.");
                 }
             }
         }
