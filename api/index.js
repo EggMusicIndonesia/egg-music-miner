@@ -9,20 +9,16 @@ bot.command('tugas', async (ctx) => {
         const { data: tasks, error } = await supabase.from('tasks').select('*');
         
         if (error) throw error;
-        if (!tasks || tasks.length === 0) return ctx.reply("Data kosong.");
+        if (!tasks || tasks.length === 0) return ctx.reply("Belum ada tugas.");
         
         let message = "🎵 *Daftar Tugas:*\n\n";
         tasks.forEach(t => { 
-            // Menggunakan penanganan jika kolom tidak ditemukan
-            message += `✅ *${t.title || 'No Title'}*\n`;
-            message += `Platform: ${t.platform || '-'}\n`;
-            message += `Poin: ${t.points || 0}\n`;
+            message += `✅ *${t.title || 'Tanpa Judul'}*\n`;
             message += `👉 ${t.url || '-'}\n\n`; 
         });
         
         ctx.reply(message, { parse_mode: 'Markdown' });
     } catch (e) {
-        // Ini akan memberitahu kita apa masalah sebenarnya di chat Telegram
         ctx.reply("Error: " + e.message);
     }
 });
