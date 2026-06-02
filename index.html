@@ -16,7 +16,7 @@
     <iframe id="video-frame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     
     <div class="container">
-        <p id="status">Tunggu durasi lagu habis untuk klaim...</p>
+        <p id="status">Harap tonton video sampai selesai...</p>
         <button id="claim-btn" disabled>TUNGGU DURASI HABIS...</button>
     </div>
     
@@ -24,10 +24,9 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // Ambil song_id dari URL (contoh: ?song_id=oO6ZfaIMhog)
+        // Ambil song_id dari URL
         const urlParams = new URLSearchParams(window.location.search);
         const songId = urlParams.get('song_id') || 'oO6ZfaIMhog'; 
-        
         document.getElementById('video-frame').src = `https://www.youtube.com/embed/${songId}?autoplay=1`;
 
         const supabase = window.supabase.createClient(
@@ -48,7 +47,7 @@
                 btn.className = 'active';
                 btn.innerText = 'KLAIM POIN SEKARANG';
                 btn.onclick = claimPoints;
-                status.innerText = 'Durasi selesai! Silakan klaim poin Anda.';
+                status.innerText = 'Video selesai! Klaim poinmu.';
             } else {
                 btn.innerText = 'TUNGGU ' + timeLeft + ' DETIK...';
             }
@@ -56,7 +55,7 @@
 
         async function claimPoints() {
             const user = tg.initDataUnsafe?.user || { id: 0, username: "guest" };
-            btn.innerText = "Memproses...";
+            btn.innerText = "Mengirim...";
             
             const { error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, 
@@ -69,9 +68,10 @@
                 alert("Gagal: " + error.message);
                 btn.innerText = "KLAIM POIN SEKARANG";
             } else {
-                status.innerText = "Sukses! Poin berhasil masuk.";
-                btn.style.display = 'none';
-                tg.showAlert("Poin berhasil masuk!");
+                // Berikan notifikasi sukses sebelum menutup aplikasi
+                tg.showAlert("Sukses! Poin telah ditambahkan ke akun Anda.");
+                // Tutup Mini App secara otomatis
+                tg.close(); 
             }
         }
     </script>
