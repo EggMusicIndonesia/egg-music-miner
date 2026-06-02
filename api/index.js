@@ -16,7 +16,7 @@ bot.command('tugas', async (ctx) => {
                 inline_keyboard: [[
                     {
                         text: "Buka Music Miner",
-                        web_app: { url: "https://egg-music-miner.vercel.app/" }
+                        web_app: { url: "https://project-g1fby.vercel.app/" }
                     }
                 ]]
             }
