@@ -5,17 +5,19 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        .song-card { background: #1e1e1e; padding: 15px; margin: 10px; border-radius: 10px; }
-        button { background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .song-card { background: #1e1e1e; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
+        button { background: #ff0000; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
     </style>
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
-    <p>Pilih lagu untuk mulai menambang:</p>
+    <p>Klik di bawah untuk mendengarkan lagu dan menambang!</p>
     
     <div class="song-card">
         <p>Surat Yang Tak Sampai</p>
-        <button onclick="window.open('https://www.youtube.com/watch?v=oO6ZfaIMhog', '_blank')">DENGARKAN</button>
+        <button onclick="window.Telegram.WebApp.openLink('https://www.youtube.com/watch?v=oO6ZfaIMhog', {try_instant_view: true})">
+            DENGARKAN
+        </button>
     </div>
 
     <script>
