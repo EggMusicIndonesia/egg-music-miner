@@ -1,54 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Egg Music Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-        .card { background: #1e1e1e; padding: 20px; margin: 20px auto; border-radius: 15px; max-width: 300px; }
-        button { background: #ff0000; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        #done-btn { background: #00ff00; color: black; display: none; }
+        /* Gaya Tampilan (CSS) */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #0f0f0f; color: #ffffff; padding: 20px; margin: 0; }
+        .card { background: #1a1a1a; padding: 25px; margin: 30px auto; border-radius: 20px; max-width: 350px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: #f1c40f; margin-bottom: 10px; }
+        p#status { font-size: 14px; color: #aaa; margin-bottom: 20px; }
+        
+        .btn { border: none; padding: 15px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; transition: 0.3s; margin-top: 10px; display: block; text-decoration: none; }
+        #listen-btn { background: #ff0000; color: white; }
+        #listen-btn:hover { background: #cc0000; }
+        
+        #claim-btn { background: #2ecc71; color: #fff; display: none; } /* Tersembunyi di awal */
+        #claim-btn:hover { background: #27ae60; }
+
+        /* Progress Bar */
+        #timer-container { display: none; width: 100%; background-color: #333; border-radius: 10px; margin-top: 15px; }
+        #timer-bar { width: 0%; height: 10px; background-color: #f1c40f; border-radius: 10px; transition: 1s linear; }
     </style>
 </head>
 <body>
-    <h2>Egg Music Miner 🥚</h2>
+
     <div class="card">
-        <p id="status">Tonton video untuk menambang</p>
-        <button id="listen-btn" onclick="openLink()">DENGARKAN LAGU</button>
-        <button id="done-btn" onclick="finishMining()">SAYA SUDAH SELESAI NONTON</button>
+        <h2>Egg Music Miner 🥚</h2>
+        <p id="status">Tonton lagu sampai habis untuk mendapatkan poin!</p>
+        
+        <button id="listen-btn" onclick="startMining()">🔥 DENGARKAN & TAMBANG</button>
+
+        <div id="timer-container">
+            <div id="timer-bar"></div>
+        </div>
+
+        <button id="claim-btn" onclick="claimPoints()">💰 KLAIM POIN SEKARANG</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        function openLink() {
-            // Coba buka link
-            tg.openLink('https://www.youtube.com/watch?v=oO6ZfaIMhog');
-            // Tampilkan tombol selesai
-            document.getElementById('done-btn').style.display = 'block';
-            document.getElementById('status').innerText = "Sudah nonton? Klik selesai!";
+        // Konfigurasi Supabase Anda
+        const SUPABASE_URL = 'https://tawqbyyzckcdmdluhxis.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const videoUrl = 'https://www.youtube.com/watch?v=oO6ZfaIMhog';
+        const songId = 'oO6ZfaIMhog'; // ID Video YouTube
+        const waitTime = 30; // Detik yang harus ditunggu (Anti-curang)
+
+        function startMining() {
+            // 1. Buka Link YouTube lewat jalur resmi Telegram
+            tg.openLink(videoUrl);
+
+            // 2. Sembunyikan tombol dengar, tampilkan progress bar
+            document.getElementById('listen-btn').style.display = 'none';
+            document.getElementById('timer-container').style.display = 'block';
+            document.getElementById('status').innerText = "Sedang menambang... Jangan tutup aplikasi ini.";
+
+            // 3. Jalankan Progress Bar
+            let timeLeft = waitTime;
+            const bar = document.getElementById('timer-bar');
+            const interval = setInterval(() => {
+                timeLeft--;
+                let percentage = ((waitTime - timeLeft) / waitTime) * 100;
+                bar.style.width = percentage + "%";
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    showClaimButton();
+                }
+            }, 1000);
         }
 
-        async function finishMining() {
-            const { createClient } = window.supabase;
-            const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
-            
+        function showClaimButton() {
+            document.getElementById('timer-container').style.display = 'none';
+            document.getElementById('claim-btn').style.display = 'block';
+            document.getElementById('status').innerText = "Mining selesai! Klaim poinmu.";
+        }
+
+        async function claimPoints() {
             const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
             
-            const { error } = await supabase.from('user_progress').insert([{
+            document.getElementById('claim-btn').disabled = true;
+            document.getElementById('claim-btn').innerText = "⏳ Memproses...";
+
+            // Simpan ke Supabase
+            const { data, error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, 
-                username: user.username,
-                song_id: 'oO6ZfaIMhog', 
+                username: user.username || user.first_name,
+                song_id: songId, 
                 completed_at: new Date().toISOString()
             }]);
-            
+
             if (error) {
-                alert("Database Error: " + error.message);
+                alert("Gagal klaim: " + error.message);
+                document.getElementById('claim-btn').disabled = false;
+                document.getElementById('claim-btn').innerText = "💰 KLAIM POIN SEKARANG";
             } else {
-                tg.showAlert("Poin berhasil masuk!");
-                tg.close();
+                tg.showAlert("Selamat! 🎉 Poin berhasil ditambahkan ke akunmu.");
+                tg.close(); // Tutup aplikasi setelah selesai
             }
         }
     </script>
