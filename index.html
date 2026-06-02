@@ -15,7 +15,7 @@
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
-        <p id="status">Klik tombol di bawah untuk membuka lagu di YouTube.</p>
+        <p id="status">Memuat data lagu...</p>
         <button class="play-btn" onclick="openVideo()">▶️ NONTON LAGU SEKARANG</button>
         <button id="claim-btn" disabled>TUNGGU DURASI HABIS...</button>
     </div>
@@ -24,20 +24,28 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         
+        const supabase = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
         const urlParams = new URLSearchParams(window.location.search);
         const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
         
-        function openVideo() {
-            tg.openLink(`https://www.youtube.com/watch?v=${songId}`);
-            startTimer();
+        // Ambil durasi dari Supabase
+        async function loadDuration() {
+            const { data } = await supabase.from('tasks').select('duration_seconds').eq('song_id', songId).single();
+            return data ? data.duration_seconds : 30; // Default 30 detik
         }
 
-        function startTimer() {
-            let timeLeft = 30; // Durasi deteksi (bisa disesuaikan)
+        async function openVideo() {
+            tg.openLink(`https://www.youtube.com/watch?v=${songId}`);
+            const duration = await loadDuration();
+            startTimer(duration);
+        }
+
+        function startTimer(duration) {
+            let timeLeft = duration;
             const btn = document.getElementById('claim-btn');
             const status = document.getElementById('status');
             
-            status.innerText = "Jangan tutup aplikasi, tunggu durasi selesai...";
+            status.innerText = "Tonton sampai habis untuk menambang...";
             const timer = setInterval(() => {
                 timeLeft--;
                 if (timeLeft <= 0) {
@@ -54,9 +62,7 @@
         }
 
         async function claimPoints() {
-            const supabase = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
             const user = tg.initDataUnsafe?.user || { id: 0, username: "guest" };
-            
             const { error } = await supabase.from('user_progress').insert([{
                 telegram_id: user.id, username: user.username, song_id: songId, completed_at: new Date().toISOString()
             }]);
