@@ -1,31 +1,32 @@
 const { Telegraf } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 
-// Mengambil variabel dari Environment Variables di Vercel
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 bot.command('tugas', async (ctx) => {
     try {
-        // Mengambil data dari tabel 'tasks' di Supabase
         const { data: tasks, error } = await supabase.from('tasks').select('*');
         
         if (error) throw error;
-        if (!tasks || tasks.length === 0) return ctx.reply("Belum ada tugas tersedia.");
+        if (!tasks || tasks.length === 0) return ctx.reply("Data kosong.");
         
-        let message = "🎵 *Daftar Tugas Listen to Earn:*\n\n";
+        let message = "🎵 *Daftar Tugas:*\n\n";
         tasks.forEach(t => { 
-            message += `✅ *${t.title}*\nPlatform: ${t.platform}\nPoin: ${t.points}\n👉 ${t.url}\n\n`; 
+            // Menggunakan penanganan jika kolom tidak ditemukan
+            message += `✅ *${t.title || 'No Title'}*\n`;
+            message += `Platform: ${t.platform || '-'}\n`;
+            message += `Poin: ${t.points || 0}\n`;
+            message += `👉 ${t.url || '-'}\n\n`; 
         });
         
         ctx.reply(message, { parse_mode: 'Markdown' });
     } catch (e) {
-        console.error(e);
-        ctx.reply("Gagal mengambil data tugas.");
+        // Ini akan memberitahu kita apa masalah sebenarnya di chat Telegram
+        ctx.reply("Error: " + e.message);
     }
 });
 
-// Handler utama untuk Vercel
 module.exports = async (req, res) => {
     try {
         if (req.method === 'POST') {
