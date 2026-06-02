@@ -1,59 +1,24 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Egg Music Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #0f0f0f; color: #fff; padding: 20px; }
-        .card { background: #1a1a1a; padding: 25px; margin: 30px auto; border-radius: 20px; max-width: 350px; border: 1px solid #333; }
-        .btn { border: none; padding: 15px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; display: block; text-decoration: none; }
-        #listen-btn { background: #ff0000; color: white; }
-        #claim-btn { background: #2ecc71; color: #fff; display: none; }
+        body { margin: 0; padding: 0; background: #000; display: flex; flex-direction: column; height: 100vh; }
+        iframe { width: 100%; height: 60%; border: none; }
+        .container { padding: 20px; color: white; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Egg Music Miner 🥚</h2>
-        <p id="status">Klik untuk mulai menambang</p>
-        <button id="listen-btn" onclick="startMining()">🔥 DENGARKAN LAGU</button>
-        <button id="claim-btn" onclick="claimPoints()">💰 KLAIM POIN</button>
+    <iframe src="https://www.youtube.com/embed/oO6ZfaIMhog?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    
+    <div class="container">
+        <p>Tonton video untuk menambang!</p>
     </div>
-
+    
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const supabase = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
-
-        function startMining() {
-            tg.openLink('https://www.youtube.com/watch?v=oO6ZfaIMhog');
-            document.getElementById('listen-btn').style.display = 'none';
-            document.getElementById('claim-btn').style.display = 'block';
-            document.getElementById('status').innerText = "Sudah nonton? Klik klaim sekarang!";
-        }
-
-        async function claimPoints() {
-            const user = tg.initDataUnsafe?.user || { id: 123, username: "test_user" };
-            document.getElementById('claim-btn').innerText = "Memproses...";
-            
-            const { error } = await supabase.from('user_progress').insert([{
-                telegram_id: user.id, 
-                username: user.username || "guest",
-                song_id: 'oO6ZfaIMhog', 
-                completed_at: new Date().toISOString()
-            }]);
-
-            if (error) {
-                alert("Gagal: " + error.message);
-                document.getElementById('claim-btn').innerText = "💰 KLAIM POIN";
-            } else {
-                document.getElementById('status').innerText = "Sukses! Poin ditambahkan.";
-                document.getElementById('claim-btn').style.display = 'none';
-                tg.showAlert("Poin berhasil masuk!");
-            }
-        }
     </script>
 </body>
 </html>
