@@ -3,58 +3,43 @@
 <head>
     <title>Egg Music Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
         #player { border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 100%; max-width: 640px; margin: 20px auto; }
-        .status { color: #00ff00; margin-top: 10px; }
     </style>
 </head>
 <body>
     <h2>Egg Music Miner 🥚</h2>
     <p id="user-info">Selamat Datang!</p>
     <div id="player"></div>
-    <div id="status-db" class="status"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
-        // Menggunakan ID default jika user kosong agar tidak stuck
+        
         const user = tg.initDataUnsafe?.user || { id: 0, first_name: "Guest", username: "guest" };
         document.getElementById('user-info').innerText = "Mining untuk: " + user.first_name;
 
-        const supabase = window.supabase.createClient(
-            'https://tawqbyyzckcdmdluhxis.supabase.co', 
-            'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
-        );
+        const supabase = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(tag);
-
-        var player;
+        // Langsung inisialisasi player tanpa menunggu API
         function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
+            new YT.Player('player', {
                 height: '360', width: '640', videoId: 'oO6ZfaIMhog',
-                events: { 'onStateChange': onPlayerStateChange }
+                events: { 'onStateChange': (event) => {
+                    if (event.data == YT.PlayerState.ENDED) {
+                        supabase.from('user_progress').insert([{
+                            telegram_id: user.id, username: user.username, song_id: 'oO6ZfaIMhog', completed_at: new Date()
+                        }]).then(() => { tg.showAlert("Success! Poin masuk."); tg.close(); });
+                    }
+                }}
             });
         }
-
-        function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.ENDED) {
-                document.getElementById('status-db').innerText = "Mencatat poin...";
-                supabase.from('user_progress').insert([{
-                    telegram_id: user.id, 
-                    username: user.username,
-                    song_id: 'oO6ZfaIMhog', 
-                    completed_at: new Date()
-                }]).then(({ error }) => {
-                    if (error) alert("Gagal catat: " + error.message);
-                    else { tg.showAlert("Success! Poin masuk."); tg.close(); }
-                });
-            }
-        }
+        
+        // Cek jika API sudah siap, panggil langsung
+        if (window.YT && YT.Player) { onYouTubeIframeAPIReady(); }
     </script>
 </body>
 </html>
