@@ -6,26 +6,21 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 bot.command('tugas', async (ctx) => {
     try {
-        // Menambahkan log ke console untuk melihat apakah request masuk
         console.log("Fetching from Supabase...");
-        
         const { data, error } = await supabase.from('tasks').select('*');
         
-        if (error) {
-            console.error("Supabase Error:", error);
-            return ctx.reply("Error Supabase: " + error.message);
-        }
+        if (error) throw error;
+        if (!data || data.length === 0) return ctx.reply("Tabel tugas kosong.");
         
-        if (!data || data.length === 0) return ctx.reply("Tabel kosong.");
-        
-        let message = "🎵 *Daftar Tugas:*\n\n";
+        let message = "Daftar Tugas:\n\n";
         data.forEach(t => { 
-            message += `✅ ${t.title || 'Tanpa Judul'}\n👉 ${t.url || '-'}\n\n`; 
+            // Menggunakan teks biasa tanpa simbol Markdown agar tidak error
+            message += `✅ ${t.title || 'Tanpa Judul'}\nLink: ${t.url || '-'}\n\n`; 
         });
         
-        ctx.reply(message, { parse_mode: 'Markdown' });
+        ctx.reply(message); // Hapus { parse_mode: 'Markdown' }
     } catch (e) {
-        ctx.reply("Error Sistem: " + e.message);
+        ctx.reply("Error: " + e.message);
     }
 });
 
