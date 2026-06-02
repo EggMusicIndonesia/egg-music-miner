@@ -16,7 +16,7 @@
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
-        <p id="status">Klik tombol untuk menonton lagu.</p>
+        <p id="status">Memuat data lagu...</p>
         <button class="btn-play" onclick="initMining()">▶️ NONTON LAGU</button>
         <button id="btn-claim" class="btn-claim" onclick="claim()">💰 KLAIM POIN</button>
     </div>
@@ -30,14 +30,15 @@
         const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
 
         async function initMining() {
-            // 1. Ambil durasi dari Supabase berdasarkan songId
-            const { data } = await supabase.from('tasks').select('duration_seconds').eq('url', `https://www.youtube.com/watch?v=${songId}`).single();
-            const duration = data ? data.duration_seconds : 30; // Default 30 jika tidak ketemu
+            // Mencari durasi menggunakan 'like' agar lebih toleran terhadap format URL
+            const { data } = await supabase.from('tasks')
+                .select('duration_seconds')
+                .like('url', `%${songId}%`)
+                .single();
+            
+            const duration = data ? data.duration_seconds : 30; 
 
-            // 2. Buka Link
             tg.openLink(`https://www.youtube.com/watch?v=${songId}`);
-
-            // 3. Jalankan Timer sesuai durasi
             startTimer(duration);
         }
 
@@ -48,7 +49,7 @@
             btn.style.display = 'block';
             btn.disabled = true;
             btn.innerText = `MENUNGGU ${seconds} DETIK...`;
-            status.innerText = "Jangan tutup aplikasi, tonton sampai habis!";
+            status.innerText = "Tonton lagu sampai habis!";
 
             let timeLeft = seconds;
             const timer = setInterval(() => {
@@ -58,7 +59,7 @@
                     btn.disabled = false;
                     btn.className = 'btn-claim active';
                     btn.innerText = '💰 KLAIM POIN SEKARANG';
-                    status.innerText = 'Durasi selesai! Silakan klaim.';
+                    status.innerText = 'Selesai! Silakan klaim poin.';
                 } else {
                     btn.innerText = `MENUNGGU ${timeLeft} DETIK...`;
                 }
@@ -71,8 +72,8 @@
                 telegram_id: user.id, username: user.username, song_id: songId, completed_at: new Date().toISOString()
             }]);
 
-            if (error) { alert("Error: " + error.message); }
-            else { tg.showAlert("Sukses! Poin masuk."); tg.close(); }
+            if (error) { alert("Gagal: " + error.message); }
+            else { tg.showAlert("Sukses! Poin ditambahkan."); tg.close(); }
         }
     </script>
 </body>
