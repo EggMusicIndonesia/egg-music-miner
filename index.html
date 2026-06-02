@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Music Miner</title>
+</head>
 <body>
-  <div id="player"></div>
-  <script src="https://www.youtube.com/iframe_api"></script>
-  <script>
-    var player;
-    function onYouTubeIframeAPIReady() {
-      player = new YT.Player('player', {
-        height: '360', width: '640',
-        videoId: 'VIDEO_ID_DARI_BOT', // Akan diganti dinamis
-        events: { 'onStateChange': onPlayerStateChange }
-      });
-    }
-    function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.ENDED) {
-        alert("Tugas selesai! Poin Anda segera diproses.");
-        // Kirim sinyal ke API Anda bahwa user ini (ID dari Telegram) sudah selesai
-      }
-    }
-  </script>
+    <h3>Selamat Datang di Egg Music Miner</h3>
+    <div id="player"></div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '360',
+                width: '640',
+                videoId: 'oO6ZfaIMhog', // Coba masukkan ID video asli untuk tes
+                events: { 'onStateChange': onPlayerStateChange }
+            });
+        }
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                alert("Tugas selesai!");
+            }
+        }
+    </script>
 </body>
 </html>
