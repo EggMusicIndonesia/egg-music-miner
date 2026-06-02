@@ -8,17 +8,19 @@ bot.command('tugas', async (ctx) => {
     try {
         console.log("Fetching from Supabase...");
         const { data, error } = await supabase.from('tasks').select('*');
-        
         if (error) throw error;
         if (!data || data.length === 0) return ctx.reply("Tabel tugas kosong.");
-        
-        let message = "Daftar Tugas:\n\n";
-        data.forEach(t => { 
-            // Menggunakan teks biasa tanpa simbol Markdown agar tidak error
-            message += `✅ ${t.title || 'Tanpa Judul'}\nLink: ${t.url || '-'}\n\n`; 
+
+        return ctx.reply("Klik tombol di bawah untuk mulai menambang:", {
+            reply_markup: {
+                inline_keyboard: [[
+                    {
+                        text: "Buka Music Miner",
+                        web_app: { url: "https://egg-music-miner.vercel.app/" }
+                    }
+                ]]
+            }
         });
-        
-        ctx.reply(message); // Hapus { parse_mode: 'Markdown' }
     } catch (e) {
         ctx.reply("Error: " + e.message);
     }
@@ -33,14 +35,3 @@ module.exports = async (req, res) => {
         return res.status(500).send('Error');
     }
 };
-// Ganti bagian ctx.reply lama dengan ini:
-ctx.reply("Pilih tugas untuk mulai menambang:", {
-  reply_markup: {
-    inline_keyboard: [[
-      {
-        text: "Tonton Tugas",
-        web_app: { url: "https://egg-music-miner.vercel.app/index.html" }
-      }
-    ]]
-  }
-});
