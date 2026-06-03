@@ -6,37 +6,28 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 
 bot.command('tugas', async (ctx) => {
     const userId = ctx.from.id;
-    
-    // 1. Ambil history tugas user dari Supabase
-    const { data: progress } = await supabase
-        .from('user_progress')
-        .select('song_id')
-        .eq('telegram_id', userId);
 
+    // 1. Ambil daftar SEMUA lagu yang ada di database (Anggap Anda punya tabel bernama 'tasks')
+    const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
+    
+    // 2. Ambil daftar lagu yang SUDAH dikerjakan user
+    const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
 
-    // 2. Daftar semua tugas yang tersedia
-    const semuaLagu = [
-    { id: "oO6ZfaIMhog", title: "Lagu A" },
-    { id: "EuuNyddQfJg", title: "Lagu B" },
-    { id: "3Nuso040BfM", title: "Lagu C" },
-    { id: "NUyNaPazni8", title: "Lagu D" },
-    { id: "phbDRO_7vMs", title: "Lagu E" }
-];
+    // 3. Filter: Ambil yang BELUM dikerjakan
+    const sisaTugas = semuaTugas.filter(tugas => !selesaiIds.includes(tugas.song_id));
 
-    // 3. FILTER: Hanya tampilkan lagu yang BELUM ada di selesaiIds
-    const sisaTugas = semuaLagu.filter(lagu => !selesaiIds.includes(lagu.id));
+    // 4. Randomize: Acak urutan lagu yang tersisa
+    const acakTugas = sisaTugas.sort(() => Math.random() - 0.5);
 
-    if (sisaTugas.length === 0) {
-        await ctx.reply("Tugas harian sudah habis!");
+    if (acakTugas.length === 0) {
+        await ctx.reply("Tugas harian sudah habis untuk hari ini!");
     } else {
-        const keyboard = sisaTugas.map(t => [{
-            text: `▶️ Nonton ${t.title}`,
-            web_app: { url: `https://project-g1fby.vercel.app/?song_id=${t.id}` }
+        const keyboard = acakTugas.map(t => [{
+            text: `▶️ ${t.title}`,
+            web_app: { url: `https://project-g1fby.vercel.app/?song_id=${t.song_id}` }
         }]);
-        await ctx.reply("Pilih lagu yang belum ditonton:", { 
-            reply_markup: { inline_keyboard: keyboard } 
-        });
+        await ctx.reply("Pilih lagu yang belum ditonton:", { reply_markup: { inline_keyboard: keyboard } });
     }
 });
 
