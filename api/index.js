@@ -1,4 +1,4 @@
-const { Bot } = require('grammy');
+const { Bot, webhookCallback } = require('grammy');
 const { createClient } = require('@supabase/supabase-js');
 
 const bot = new Bot('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
@@ -6,6 +6,7 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 
 bot.command('tugas', async (ctx) => {
     const userId = ctx.from.id;
+    // Query Supabase
     const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
 
@@ -18,7 +19,7 @@ bot.command('tugas', async (ctx) => {
     const sisaTugas = semuaLagu.filter(lagu => !selesaiIds.includes(lagu.id));
 
     if (sisaTugas.length === 0) {
-        await ctx.reply("Tugas harian sudah habis!");
+        await ctx.reply("Tugas habis untuk hari ini!");
     } else {
         const keyboard = sisaTugas.map(t => [{
             text: `▶️ Nonton ${t.title}`,
@@ -28,4 +29,5 @@ bot.command('tugas', async (ctx) => {
     }
 });
 
-module.exports = (req, res) => bot.handleUpdate(req.body, res);
+// Ini bagian krusial agar bot jalan di Vercel
+module.exports = webhookCallback(bot, 'http');
