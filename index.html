@@ -11,20 +11,23 @@
     </style>
 </head>
 <body>
-    <h2 id="status">Siap digunakan</h2>
+    <h2 id="judul">Memuat Musik...</h2>
     <button id="btn-tonton" style="background: #007bff; color: white;" onclick="mulai()">▶️ MULAI TONTON</button>
     <button id="btn-klaim" style="background: #28a745; color: white; display: none;" disabled>✅ KLAIM POIN</button>
 
     <script>
-        // Paksa inisialisasi
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        document.getElementById('status').innerText = "Silakan klik tombol di bawah:";
+        // MENGAMBIL ID DARI URL BOT
+        const params = new URLSearchParams(window.location.search);
+        const songId = params.get('song_id') || 'dQw4w9WgXcQ'; // Default ke RickRoll jika kosong
+        
+        document.getElementById('judul').innerText = "Tugas: Menonton Video";
 
         function mulai() {
-            // Gunakan link yang jelas
-            tg.openLink('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+            // MENGGUNAKAN songId DINAMIS
+            tg.openLink('https://www.youtube.com/watch?v=' + songId);
             
             document.getElementById('btn-tonton').style.display = 'none';
             document.getElementById('btn-klaim').style.display = 'block';
@@ -38,7 +41,7 @@
                     document.getElementById('btn-klaim').innerText = "✅ KLAIM POIN";
                     document.getElementById('btn-klaim').disabled = false;
                     document.getElementById('btn-klaim').onclick = function() {
-                        alert("Poin ditambahkan!");
+                        alert("Poin berhasil ditambahkan!");
                         tg.close();
                     };
                 }
