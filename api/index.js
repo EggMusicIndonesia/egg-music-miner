@@ -1,13 +1,7 @@
-const { Bot, webhookCallback } = require('grammy');
-const { createClient } = require('@supabase/supabase-js');
-
-const bot = new Bot('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
-const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
-
 bot.command('tugas', async (ctx) => {
     const userId = String(ctx.from.id);
 
-    // 1. Ambil data dengan paksa (order DESC)
+    // Ambil data (tambahkan timestamp agar tidak di-cache oleh Supabase)
     const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
@@ -16,26 +10,23 @@ bot.command('tugas', async (ctx) => {
         .limit(1)
         .maybeSingle();
 
-    // 2. Siapkan variabel angka
     const tugas = laporan ? laporan.total_tugas_selesai : 0;
     const poin = laporan ? laporan.total_poin : 0;
 
-    // 3. KIRIM PESAN DENGAN ANGKA (Ini yang akan muncul di chat)
-    const text = `📊 *Status Progres Anda*\n\n` +
-                 `Tugas Selesai: ${tugas}\n` +
-                 `Total Poin: ${poin} pts\n\n` +
-                 `Klik tombol di bawah untuk lanjut mengerjakan tugas:`;
+    // Teks baru (biar Vercel tahu ini update)
+    const text = `📊 *UPDATE PROGRES ANDA*\n\n` +
+                 `✅ Tugas Selesai: ${tugas}\n` +
+                 `💰 Total Poin: ${poin} pts\n\n` +
+                 `--------------------------\n` +
+                 `Silakan klik tombol di bawah untuk lanjut:`;
 
-    // 4. Kirim dengan tombol
     await ctx.reply(text, {
         parse_mode: 'Markdown',
         reply_markup: {
             inline_keyboard: [[{
-                text: "▶️ Buka Player & Kerjakan Tugas",
+                text: "▶️ Buka Player",
                 web_app: { url: `https://project-g1fby.vercel.app/?telegram_id=${userId}` }
             }]]
         }
     });
 });
-
-module.exports = webhookCallback(bot, 'http');
