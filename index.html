@@ -42,7 +42,7 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // SOLUSI AMAN: Deteksi URL, jika kosong atau bernilai '0', paksa gunakan ID asli Anda 7659693582
+        // PENGAMAN HARDCODE: Jika parameter URL hilang atau bernilai '0', paksa gunakan ID asli Anda
         const rawUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = rawUser && rawUser !== '0' && rawUser !== 0 ? parseInt(rawUser) : 7659693582;
         
@@ -54,7 +54,7 @@
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // Tembak menggunakan ID murni yang sudah terbukti valid di database Anda
+            // Mencari riwayat tugas menggunakan filter ID murni yang terbukti valid di database
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
             const headers = {
