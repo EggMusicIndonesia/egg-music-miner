@@ -42,25 +42,25 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Membaca data username dari Telegram WebApp secara dinamis
-        let usernameRaw = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music';
-        // PERBAIKAN: Paksa menjadi huruf kecil semua agar COCOK dengan database Supabase Anda
-        const username = usernameRaw.toLowerCase(); 
+        // Mengambil data parameter URL dari bot atau fallback ke data profil Anda
+        const telegramIdFromBot = params.get('telegram_id');
+        const user = telegramIdFromBot && telegramIdFromBot !== '0' ? telegramIdFromBot : (tg.initDataUnsafe?.user?.id || 7659693582);
+        const username = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music'; 
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // PERBAIKAN QUERY: Menggunakan ilike (bukan eq) agar pencarian nama tidak sensitif huruf kapital
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=ilike.${username}&select=id`;
+            // PERBAIKAN TOTAL: Kunci pencarian mutlak menggunakan ID Telegram agar 100% akurat & anti salah nama
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
                 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
             };
 
-            // Ambil total riwayat tugas dari database
+            // Ambil total riwayat tugas dari database berdasarkan ID
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
@@ -127,7 +127,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({ 
-                    telegram_id: tg.initDataUnsafe?.user?.id || 7659693582,
+                    telegram_id: user,
                     username: username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
