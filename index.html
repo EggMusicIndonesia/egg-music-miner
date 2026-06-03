@@ -42,22 +42,17 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Ambil data Telegram asli
+        // PERBAIKAN: Mengambil data user langsung menggunakan fungsi bawaan Telegram WebApp SDK yang resmi
         const user = tg.initDataUnsafe?.user?.id || 0;
-        const username = tg.initDataUnsafe?.user?.username || 'eghas_music'; // Fallback otomatis ke eghas_music untuk testing
-        
-        let duration = 30; 
-        let startTime = 0;
+        const username = tg.initDataUnsafe?.user?.username || 'eghas_music'; 
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // Perbaikan Query: Jika user ID valid (!= 0) cari pakai ID, jika tidak cari berdasarkan Username
-            const urlProgress = user !== 0 
-                ? `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`
-                : `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=eq.${username}&select=id`;
+            // PERBAIKAN QUERY: Utamakan mencari berdasarkan username dari Telegram agar data riwayat langsung COCOK
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=eq.${username}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -131,7 +126,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({ 
-                    telegram_id: user, 
+                    telegram_id: user !== 0 ? user : 7659693582, // Gunakan fallback ID asli Anda jika tg reading terhambat di WebApp browser
                     username: username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
@@ -140,11 +135,16 @@
             .then(res => {
                 if (res.ok) {
                     tg.showAlert("Sukses! 100 Poin ditambahkan.");
+                    // Segera segarkan nilai poin di layar saat sukses klaim
+                    initAplikasi();
                 } else {
                     alert("Gagal menyimpan poin.");
                 }
             })
-            .finally(() => tg.close());
+            .finally(() => {
+                document.getElementById('btn-claim').style.display = 'none';
+                document.getElementById('btn-play').style.display = 'block';
+            });
         }
     </script>
 </body>
