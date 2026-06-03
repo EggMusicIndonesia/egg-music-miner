@@ -5,26 +5,25 @@ const bot = new Bot('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
 bot.command('tugas', async (ctx) => {
-    // Pastikan userId selalu berupa string untuk perbandingan database
     const userId = String(ctx.from.id);
     
-    // Ambil data laporan
+    // Mengambil data dengan logika pengurutan untuk menghindari data sampah/duplikat
     const { data: laporan, error } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
         .eq('telegram_id', userId)
+        .order('total_tugas_selesai', { ascending: false }) // Ambil yang paling besar nilainya
+        .limit(1)                                         // Hanya ambil 1 baris
         .maybeSingle();
 
     if (error) console.error("Error Supabase:", error);
 
-    // Ambil daftar tugas dan progress
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
     const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
     
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
     const sisaTugas = semuaTugas ? semuaTugas.filter(t => !selesaiIds.includes(t.song_id)) : [];
 
-    // Output pesan
     let message = `📊 *Status Progres Anda*\n`;
     message += `Tugas Selesai: ${laporan ? laporan.total_tugas_selesai : 0}\n`;
     message += `Total Poin: ${laporan ? laporan.total_poin : 0} pts\n\n`;
