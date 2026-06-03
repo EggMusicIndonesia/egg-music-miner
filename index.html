@@ -1,37 +1,28 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Egg Music Miner</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
-        button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-play { background: #ff0000; color: white; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>Egg Music Miner 🥚</h2>
-        <p id="song-title">Memuat lagu...</p>
-        <button id="btn-play" class="btn-play" onclick="buka()">▶️ TONTON SEKARANG</button>
-    </div>
+<div id="player-container" style="display:none; margin-top: 20px;">
+    <iframe id="youtube-embed" width="100%" height="200" src="" frameborder="0" allowfullscreen></iframe>
+    <button onclick="tandaiSelesai()" style="background: #28a745;">✅ TANDAI SELESAI</button>
+</div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const params = new URLSearchParams(window.location.search);
+    const songId = params.get('song_id');
+    
+    // Tampilkan tombol putar
+    function buka() {
+        if (!songId) return alert("ID Lagu tidak ditemukan!");
         
-        // Mengambil ID lagu dari URL yang dikirim bot
-        const params = new URLSearchParams(window.location.search);
-        const songId = params.get('song_id');
+        // Sembunyikan tombol, tampilkan iframe
+        document.getElementById('btn-play').style.display = 'none';
+        document.getElementById('player-container').style.display = 'block';
         
-        document.getElementById('song-title').innerText = "ID Lagu: " + songId;
+        // Masukkan URL YouTube ke iframe
+        document.getElementById('youtube-embed').src = 'https://www.youtube.com/embed/' + songId + '?autoplay=1';
+    }
 
-        function buka() {
-            if (!songId) return alert("ID Lagu tidak ditemukan!");
-            window.open('https://www.youtube.com/watch?v=' + songId, '_blank');
-        }
-    </script>
-</body>
-</html>
+    function tandaiSelesai() {
+        // Logika kirim ke Supabase
+        alert("Tugas selesai! (Integrasikan API Supabase Anda di sini)");
+    }
+</script>
