@@ -50,7 +50,7 @@
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
             })
             .catch(() => {
-                document.getElementById('status').innerText = "Gagal memuat durasi asli. Menggunakan waktu standar (30s).";
+                document.getElementById('status').innerText = "Menggunakan waktu standar (30s).";
                 document.getElementById('btn-play').disabled = false;
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
             });
@@ -63,7 +63,7 @@
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
             
             let sisa = duration;
-            document.getElementById('btn-play').style.display = 'none';
+            document.getElementById('btn-play').style.style.display = 'none';
             
             const timer = setInterval(() => {
                 sisa--;
