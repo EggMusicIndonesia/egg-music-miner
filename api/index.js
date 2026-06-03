@@ -5,24 +5,24 @@ const bot = new Bot('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
 bot.command('tugas', async (ctx) => {
-    // String() memastikan ID cocok dengan database (PENTING)
+    // Memastikan ID dalam format String agar cocok dengan database
     const userId = String(ctx.from.id);
 
-    // 1. Ambil data laporan
+    // Ambil data laporan
     const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
-        .eq('telegram_id', String(userId))
+        .eq('telegram_id', userId)
         .single();
 
-    // 2. Ambil data tugas
+    // Ambil daftar tugas dan filter
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
-    const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', String(userId))
+    const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
     
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
     const sisaTugas = semuaTugas.filter(t => !selesaiIds.includes(t.song_id));
 
-    // 3. Tampilkan hasil
+    // Menampilkan status
     let message = `📊 *Status Progres Anda*\n`;
     message += `Tugas Selesai: ${laporan ? laporan.total_tugas_selesai : 0}\n`;
     message += `Total Poin: ${laporan ? laporan.total_poin : 0} pts\n\n`;
