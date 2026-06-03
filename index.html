@@ -1,60 +1,72 @@
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { margin: 0; padding: 20px; font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
+        #video-container { width: 100%; height: 200px; background: #000; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
 
-    // Pastikan library supabase sudah dimuat sebelum ini
-    // Ganti URL dan KEY dengan milik Anda dari Dashboard Supabase
-    const supabase = supabase.createClient('URL_SUPABASE_ANDA', 'KEY_SUPABASE_ANDA');
-    
-    const params = new URLSearchParams(window.location.search);
-    const songId = params.get('song_id');
-    const userId = params.get('telegram_id');
+    <div id="video-container">
+        <div id="player"></div>
+    </div>
 
-    async function buka() {
-        if (!songId) return alert("ID Lagu tidak ditemukan!");
+    <button id="btn-klaim" disabled style="padding: 15px 30px; font-size: 18px; background: #6c757d; color: white; border: none; border-radius: 8px; width: 100%;">
+        ⏳ Tunggu Video Selesai...
+    </button>
 
-        // Ambil durasi
-        const { data: task, error } = await supabase
-            .from('tasks')
-            .select('duration')
-            .eq('song_id', songId)
-            .single();
-
-        const duration = (task && task.duration) ? task.duration : 30;
-
-        tg.openLink('https://www.youtube.com/watch?v=' + songId);
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
         
-        document.getElementById('btn-play').style.display = 'none';
-        const btnSelesai = document.getElementById('btn-selesai');
-        btnSelesai.style.display = 'inline-block';
-        btnSelesai.disabled = true;
-        btnSelesai.innerText = "⏳ Menunggu (" + duration + "s)";
+        const supabase = supabase.createClient('URL_SUPABASE_ANDA', 'KEY_SUPABASE_ANDA');
+        const params = new URLSearchParams(window.location.search);
+        const songId = params.get('song_id') || 'dQw4w9WgXcQ'; // Ganti default jika perlu
+        const userId = params.get('telegram_id');
 
-        let timeLeft = duration;
-        let timer = setInterval(() => {
-            timeLeft--;
-            btnSelesai.innerText = "⏳ Menunggu (" + timeLeft + "s)";
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                btnSelesai.disabled = false;
-                btnSelesai.innerText = "✅ TANDAI SELESAI";
-                btnSelesai.style.background = "#28a745";
-            }
-        }, 1000);
-    }
+        // Load YouTube IFrame API
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-    async function tandaiSelesai() {
-        if (!userId) return alert("User ID tidak terbaca!");
-        
-        const { error } = await supabase
-            .from('user_progress')
-            .insert([{ telegram_id: userId, song_id: songId, status: 'selesai' }]);
-
-        if (error) {
-            alert("Gagal menyimpan: " + error.message);
-        } else {
-            alert("Tugas berhasil diselesaikan!");
-            tg.close();
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '200',
+                width: '100%',
+                videoId: songId,
+                events: { 'onStateChange': onPlayerStateChange }
+            });
         }
-    }
-</script>
+
+        function onPlayerStateChange(event) {
+            // 0 = Ended (Video Selesai)
+            if (event.data === 0) {
+                const btn = document.getElementById('btn-klaim');
+                btn.disabled = false;
+                btn.style.background = "#28a745";
+                btn.innerText = "✅ KLAIM POIN";
+                btn.onclick = tandaiSelesai;
+            }
+        }
+
+        async function tandaiSelesai() {
+            const { error } = await supabase
+                .from('user_progress')
+                .insert([{ telegram_id: userId, song_id: songId, status: 'selesai' }]);
+
+            if (error) {
+                alert("Gagal: " + error.message);
+            } else {
+                alert("Tugas Selesai! Poin tersimpan.");
+                tg.close();
+            }
+        }
+    </script>
+</body>
+</html>
