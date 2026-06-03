@@ -13,7 +13,7 @@ bot.command('tugas', async (ctx) => {
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
         .eq('telegram_id', userId)
-        .single();
+        .maybeSingle();
 
     // Ambil daftar tugas dan filter
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
