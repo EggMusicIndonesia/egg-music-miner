@@ -7,8 +7,8 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 bot.command('tugas', async (ctx) => {
     const userId = String(ctx.from.id);
 
-    // Ambil data dari tabel laporan_airdrop
-    const { data, error } = await supabase
+    // Ambil data langsung dari Supabase
+    const { data: laporan, error } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
         .eq('telegram_id', userId)
@@ -16,18 +16,20 @@ bot.command('tugas', async (ctx) => {
         .limit(1)
         .maybeSingle();
 
-    // Pastikan nilai angka tidak hilang
-    const tugas = data ? data.total_tugas_selesai : 0;
-    const poin = data ? data.total_poin : 0;
+    // Pastikan nilai tidak kosong
+    const tugas = laporan ? laporan.total_tugas_selesai : 0;
+    const poin = laporan ? laporan.total_poin : 0;
 
+    // Pesan yang langsung menampilkan angka (seperti yang Anda inginkan)
     let message = `📊 *Status Progres Anda*\n`;
     message += `Tugas Selesai: ${tugas}\n`;
     message += `Total Poin: ${poin} pts\n\n`;
-    message += `Klik tombol di bawah untuk mengerjakan tugas:`;
+    message += `Klik tombol untuk mengerjakan tugas:`;
 
+    // Tombol tetap ada agar Anda bisa membuka video
     const keyboard = {
         inline_keyboard: [[{
-            text: "▶️ Buka Player & Kerjakan Tugas",
+            text: "▶️ Kerjakan Tugas",
             web_app: { url: `https://project-g1fby.vercel.app/?telegram_id=${userId}` }
         }]]
     };
