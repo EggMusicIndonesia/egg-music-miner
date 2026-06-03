@@ -7,6 +7,9 @@
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
         .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
+        .user-info { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #444; font-size: 14px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .user-detail { display: flex; flex-direction: column; gap: 4px; }
+        .poin-box { color: #2ecc71; font-weight: bold; font-size: 18px; text-align: right; }
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; margin-top: 15px; font-weight: bold; cursor: pointer; }
         .btn-play { background: #ff0000; color: white; }
         .btn-claim { background: #2ecc71; color: white; display: none; }
@@ -16,6 +19,17 @@
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
+        
+        <div class="user-info">
+            <div class="user-detail">
+                <span>👤 <strong id="user-name">Loading...</strong></span>
+                <span style="font-size: 12px; color: #aaa;">Tugas Selesai: <strong id="user-tasks" style="color: #fff;">0</strong></span>
+            </div>
+            <div class="poin-box">
+                💰 <span id="user-points">0</span> <span style="font-size: 12px; color: #2ecc71;">Poin</span>
+            </div>
+        </div>
+
         <p id="status">Menghubungkan ke database...</p>
         <button id="btn-play" class="btn-play" onclick="buka()" disabled>Mohon Tunggu...</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
@@ -27,19 +41,37 @@
         
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
+        const user = tg.initDataUnsafe?.user?.id || 0;
+        const username = tg.initDataUnsafe?.user?.username || 'guest';
         
         let duration = 30; 
         let startTime = 0;
 
-        function ambilDurasi() {
-            const url = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
+        // Tampilkan username Telegram di UI
+        document.getElementById('user-name').innerText = username;
+
+        // Ambil data Tugas sekaligus menghitung poin akumulasi user
+        function initAplikasi() {
+            const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
-            fetch(url, {
-                headers: {
-                    'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-                    'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
-                }
+            const headers = {
+                'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
+                'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
+            };
+
+            // Ambil total history tugas yang pernah dikerjakan user ini
+            fetch(urlProgress, { headers })
+            .then(res => res.json())
+            .then(progressData => {
+                const totalTugas = progressData ? progressData.length : 0;
+                document.getElementById('user-tasks').innerText = totalTugas;
+                document.getElementById('user-points').innerText = totalTugas * 100; // Kalkulasi: 1 tugas = 100 Poin
             })
+            .catch(() => console.log("Gagal memuat history poin"));
+
+            // Ambil durasi tontonan lagu
+            fetch(urlDurasi, { headers })
             .then(res => res.json())
             .then(data => {
                 if(data && data.length > 0) {
@@ -56,7 +88,7 @@
             });
         }
         
-        ambilDurasi();
+        initAplikasi();
 
         function buka() {
             startTime = Date.now(); 
@@ -85,8 +117,6 @@
 
             document.getElementById('btn-claim').innerText = "Mengirim...";
             const url = 'https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress';
-            const user = tg.initDataUnsafe?.user?.id || 0;
-            const username = tg.initDataUnsafe?.user?.username || 'guest';
 
             fetch(url, {
                 method: 'POST',
@@ -105,7 +135,7 @@
             })
             .then(res => {
                 if (res.ok) {
-                    tg.showAlert("Sukses! Poin ditambahkan ke database.");
+                    tg.showAlert("Sukses! 100 Poin ditambahkan.");
                 } else {
                     alert("Gagal menyimpan poin.");
                 }
