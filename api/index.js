@@ -5,9 +5,10 @@ const bot = new Bot('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
 bot.command('tugas', async (ctx) => {
-    const userId = ctx.from.id;
+    // String() memastikan ID cocok dengan database (PENTING)
+    const userId = String(ctx.from.id);
 
-    // 1. Ambil data laporan (sesuai logika asli Anda)
+    // 1. Ambil data laporan
     const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
