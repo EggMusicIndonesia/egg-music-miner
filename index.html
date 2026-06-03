@@ -1,54 +1,56 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Egg Music Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
+        .card { background: #1a1a1a; padding: 25px; border-radius: 20px; }
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; margin-top: 15px; font-weight: bold; cursor: pointer; }
         .btn-play { background: #ff0000; color: white; }
-        .btn-claim { background: #2ecc71; color: white; display: none; margin-top: 15px; }
+        .btn-claim { background: #2ecc71; color: white; display: none; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
-        <p id="status">Klik tombol untuk mulai.</p>
-        <button id="btn-play" class="btn-play" onclick="mulai()">▶️ NONTON LAGU</button>
+        <p id="status">Klik tombol di bawah.</p>
+        <button id="btn-play" class="btn-play" onclick="buka()">▶️ NONTON LAGU</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
-        
-        // Timer sederhana tanpa database di awal agar tidak blank
-        function mulai() {
+
+        function buka() {
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
-            document.getElementById('status').innerText = "Mohon tonton video sampai selesai...";
+            document.getElementById('status').innerText = "Mohon tonton 30 detik...";
             document.getElementById('btn-play').style.display = 'none';
-            
-            // Set durasi 30 detik (bisa diubah manual)
             setTimeout(() => {
                 document.getElementById('btn-claim').style.display = 'block';
-                document.getElementById('status').innerText = "Waktu selesai! Silakan klaim.";
+                document.getElementById('status').innerText = "Selesai! Klik klaim.";
             }, 30000);
         }
 
-        async function klaim() {
-            const sb = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
+        function klaim() {
+            // Kita kirim request sederhana ke API Supabase (tanpa SDK yang berat)
+            const url = 'https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress';
             const user = tg.initDataUnsafe?.user?.id || 0;
-            
-            const { error } = await sb.from('user_progress').insert([{telegram_id: user, song_id: songId}]);
-            
-            if (error) { alert("Error: " + error.message); } 
-            else { tg.showAlert("Sukses! Poin ditambahkan."); tg.close(); }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
+                    'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ telegram_id: user, song_id: songId })
+            })
+            .then(res => res.ok ? tg.showAlert("Sukses!") : alert("Error!"))
+            .finally(() => tg.close());
         }
     </script>
 </body>
