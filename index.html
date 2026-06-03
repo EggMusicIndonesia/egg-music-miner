@@ -11,6 +11,7 @@
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-play { background: #ff0000; color: white; display: block; }
         .btn-claim { background: #2ecc71; color: white; display: none; }
+        .btn-next { background: #3498db; color: white; display: none; }
     </style>
 </head>
 <body>
@@ -18,64 +19,44 @@
         <h2>Egg Music Miner 🥚</h2>
         <div class="user-info">
             👤 <span id="user-name">Memuat...</span><br>
-            Tugas: <strong id="user-tasks">0</strong> | 💰 <strong id="user-points">0</strong> Poin
+            Poin: <strong id="user-points">0</strong>
         </div>
-        <p id="status">Memuat...</p>
+        <p id="status">Memuat data...</p>
         <button id="btn-play" class="btn-play" onclick="buka()">▶️ NONTON LAGU</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
+        <button id="btn-next" class="btn-next" onclick="nextTask()">➡️ TUGAS LAINNYA</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
-        // 1. Menangkap ID dari bot (URL params) agar lagu bisa ganti-ganti
         const params = new URLSearchParams(window.location.search);
-        const songId = params.get('song_id') || "oO6ZfaIMhog"; 
+        const songId = params.get('song_id'); 
         const u = tg.initDataUnsafe?.user || { id: 7659693582, username: 'eghas_music' };
         
         document.getElementById('user-name').innerText = u.username;
 
-        const headers = {
-            'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-            'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-            'Content-Type': 'application/json'
-        };
+        const headers = { 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Content-Type': 'application/json' };
 
         async function init() {
-            try {
-                // Fetch Data
-                const [res, resA] = await Promise.all([
-                    fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${u.id}&order=last_complete.desc&limit=1`, { headers }),
-                    fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${u.id}`, { headers })
-                ]);
-                const data = await res.json();
-                const dataA = await resA.json();
-
-                if (dataA.length > 0) {
-                    document.getElementById('user-tasks').innerText = dataA[0].total_tugas_selesai || 0;
-                    document.getElementById('user-points').innerText = dataA[0].total_poin || 0;
+            const res = await fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${u.id}&song_id=eq.${songId}&order=last_complete.desc&limit=1`, { headers });
+            const data = await res.json();
+            
+            if (data.length > 0 && data[0].last_complete) {
+                const diff = (new Date() - new Date(data[0].last_complete)) / (1000 * 60 * 60);
+                if (diff < 24) {
+                    document.getElementById('status').innerText = "Tunggu " + Math.ceil(24 - diff) + " jam lagi.";
+                    document.getElementById('btn-play').style.display = 'none';
+                    return;
                 }
-
-                // Cek Durasi 24 Jam
-                if (data.length > 0 && data[0].last_complete) {
-                    const diff = (new Date() - new Date(data[0].last_complete)) / (1000 * 60 * 60);
-                    if (diff < 24) {
-                        const sisa = Math.ceil(24 - diff);
-                        document.getElementById('status').innerText = "Tunggu " + sisa + " jam lagi untuk tugas ini.";
-                        document.getElementById('btn-play').style.display = 'none';
-                        return;
-                    }
-                }
-                document.getElementById('status').innerText = "Siap menambang!";
-            } catch (e) { document.getElementById('status').innerText = "System Ready."; }
+            }
+            document.getElementById('status').innerText = "Siap menambang!";
         }
 
         function buka() {
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
             document.getElementById('btn-play').style.display = 'none';
             document.getElementById('btn-claim').style.display = 'block';
-            document.getElementById('status').innerText = "Sudah nonton? Klik Klaim.";
         }
 
         async function klaim() {
@@ -84,17 +65,12 @@
                 headers: headers,
                 body: JSON.stringify({ telegram_id: u.id, username: u.username, song_id: songId, last_complete: new Date().toISOString() })
             });
-            
-            // Tombol Lanjut tanpa tutup aplikasi
             document.getElementById('btn-claim').style.display = 'none';
-            document.getElementById('status').innerText = "Sukses! Poin bertambah.";
-            const btnLanjut = document.createElement("button");
-            btnLanjut.innerText = "➡️ LANJUT TUGAS BERIKUTNYA";
-            btnLanjut.className = "btn-play";
-            btnLanjut.onclick = () => window.location.href = "https://t.me/EggMusicMiner_bot"; 
-            document.querySelector('.card').appendChild(btnLanjut);
+            document.getElementById('btn-next').style.display = 'block';
+            document.getElementById('status').innerText = "Sukses!";
         }
 
+        function nextTask() { window.location.href = "https://t.me/EggMusicMiner_bot"; }
         init();
     </script>
 </body>
