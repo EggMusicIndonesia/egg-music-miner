@@ -18,30 +18,62 @@
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
         <div class="user-info">
-            <div>
-                <span>👤 <strong id="user-name">User</strong></span><br>
-                <span style="font-size: 12px; color: #aaa;">Tugas: <strong id="user-tasks">0</strong></span>
+            <div>👤 <strong id="user-name">eghas_music</strong><br>
+                 <span style="font-size: 12px; color: #aaa;">Tugas: <strong id="user-tasks">0</strong></span>
             </div>
             <div class="poin-box">💰 <span id="user-points">0</span> Poin</div>
         </div>
-        <p id="status">Memuat data...</p>
-        <button id="btn-play" class="btn-play" onclick="buka()" disabled>Mohon Tunggu...</button>
+        <p id="status">Memuat...</p>
+        <button id="btn-play" class="btn-play" onclick="buka()">▶️ NONTON LAGU</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        const params = new URLSearchParams(window.location.search);
-        const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PENGUNCI ID: Paksa pakai ID Anda sebagai pemilik utama jika terjadi error di browser
-        const userId = parseInt(params.get('telegram_id') || tg.initDataUnsafe?.user?.id || 7659693582);
-        const username = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
-        document.getElementById('user-name').innerText = username;
+        // IDENTITAS TETAP (Tidak akan berubah walau dibuka dari browser manapun)
+        const MY_ID = 7659693582;
+        const MY_USER = "eghas_music";
+        const songId = "oO6ZfaIMhog";
 
-        const headers = {'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'};
+        const headers = {
+            'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
+            'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
+        };
 
-        function initAplikasi() {
-            // Ambil data dari laporan_airdrop berdasarkan ID, urutkan berdasarkan tugas terbanyak
-            fetch(`
+        function updateData() {
+            // Langsung tembak ke tabel laporan_airdrop dengan ID tetap
+            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${MY_ID}`, { headers })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    document.getElementById('user-tasks').innerText = data[0].total_tugas_selesai || 0;
+                    document.getElementById('user-points').innerText = data[0].total_poin || 0;
+                }
+            });
+        }
+        
+        updateData();
+
+        function buka() {
+            window.startTime = Date.now();
+            tg.openLink('https://www.youtube.com/watch?v=' + songId);
+            document.getElementById('btn-play').style.display = 'none';
+            document.getElementById('btn-claim').style.display = 'block';
+            document.getElementById('status').innerText = "Silakan tonton, lalu klik Klaim.";
+        }
+
+        function klaim() {
+            fetch('https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress', {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ telegram_id: MY_ID, username: MY_USER, song_id: songId, completed_at: new Date().toISOString() })
+            }).then(() => {
+                tg.showAlert("Sukses! Data dikirim.");
+                updateData();
+            });
+        }
+    </script>
+</body>
+</html>
