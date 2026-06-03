@@ -1,12 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Egg Player</title>
+    <title>Egg Music Player</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        button { padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; }
+    </style>
 </head>
-<body style="background:#1a1a1a; color:white; text-align:center; padding:50px; font-family:sans-serif;">
-    <h1>PLAYER AKTIF</h1>
-    <p>Jika Anda melihat ini, sistem web sudah terhubung.</p>
-    <button onclick="window.Telegram.WebApp.close()" style="padding:15px; background:red; color:white; border:none; border-radius:8px;">TUTUP APLIKASI</button>
+<body>
+    <h2>Egg Music Player</h2>
+    <div id="status">Memuat...</div>
+    <button id="btn-tonton" style="background: #007bff; color: white;" onclick="mulai()">▶️ MULAI TONTON</button>
+    <button id="btn-klaim" style="background: #28a745; color: white; display: none;" disabled onclick="klaim()">✅ KLAIM POIN</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        
+        // Inisialisasi Supabase
+        const supabase = supabase.createClient(
+            'https://tawqbyyzckcdmdluhxis.supabase.co', 
+            'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
+        );
+
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('telegram_id');
+        const songId = params.get('song_id') || 'default_song';
+
+        function mulai() {
+            tg.openLink('https://www.youtube.com/watch?v=' + songId);
+            document.getElementById('btn-tonton').style.display = 'none';
+            document.getElementById('btn-klaim').style.display = 'block';
+            
+            let sisa = 30; // Detik tonton
+            let timer = setInterval(() => {
+                sisa--;
+                document.getElementById('btn-klaim').innerText = "⏳ Tunggu " + sisa + " detik";
+                if(sisa <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('btn-klaim').innerText = "✅ KLAIM POIN";
+                    document.getElementById('btn-klaim').disabled = false;
+                }
+            }, 1000);
+        }
+
+        async function klaim() {
+            if (!userId) return alert("User ID tidak ditemukan!");
+            
+            const { error } = await supabase
+                .from('user_progress')
+                .insert([{ telegram_id: userId, song_id: songId, status: 'selesai' }]);
+            
+            if (error) {
+                alert("Gagal klaim: " + error.message);
+            } else {
+                alert("Berhasil! Poin ditambahkan.");
+                tg.close();
+            }
+        }
+    </script>
 </body>
 </html>
