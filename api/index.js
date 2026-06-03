@@ -1,7 +1,6 @@
 const { Telegraf } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 
-// Inisialisasi Bot dan Supabase
 const bot = new Telegraf(process.env.BOT_TOKEN || '7581298068:AAELv84N3UfLpbe9o1V_7Z9B4gGCHl93mYQ');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
@@ -11,16 +10,15 @@ bot.command('start', (ctx) => {
 
 bot.command('tugas', async (ctx) => {
     try {
-        // Mengambil song_id dan platform dari tabel tasks
-        const { data, error } = await supabase.from('tasks').select('song_id, platform');
+        const { data, error } = await supabase.from('tasks').select('song_id');
         
         if (error || !data || data.length === 0) {
             return ctx.reply("Gagal mengambil data dari database atau data kosong.");
         }
 
-        // Membuat tombol dinamis berdasarkan song_id di database
+        // Membuat tombol WebApp secara dinamis berdasarkan song_id
         const keyboard = data.map(song => [{
-            text: `🎵 Putar Lagu (ID: ${song.song_id})`,
+            text: `▶️ Buka Music Miner (ID: ${song.song_id})`,
             web_app: { url: `https://project-g1fby.vercel.app/?song_id=${song.song_id}` }
         }]);
 
@@ -28,11 +26,10 @@ bot.command('tugas', async (ctx) => {
             reply_markup: { inline_keyboard: keyboard }
         });
     } catch (err) {
-        ctx.reply("Terjadi kesalahan sistem: " + err.message);
+        ctx.reply("Terjadi kesalahan: " + err.message);
     }
 });
 
-// Handler untuk Vercel Serverless
 module.exports = async (req, res) => {
     try {
         if (req.method === 'POST') {
