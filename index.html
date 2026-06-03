@@ -42,7 +42,7 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Ambil ID secara aman dari URL parameter bot atau SDK Telegram
+        // Ambil ID secara aman, jika terpotong jadi 0, kunci ke ID Anda yang punya 1800 poin
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = (urlUser && urlUser !== '0' && urlUser !== 0) ? parseInt(urlUser) : 7659693582;
         
@@ -58,20 +58,25 @@
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
-            // 1. Ambil Riwayat Poin (Pastikan hasil respon berupa Array valid)
+            // PERBAIKAN UTAMA: Tembak langsung ke view 'laporan_airdrop' tempat saldo 1800 Poin Anda berada
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${user}&select=total_tugas_selesai,total_poin`;
+            
+            // 1. Ambil Saldo Langsung dari laporan_airdrop
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
-                // Tambahkan validasi Array.isArray untuk mencegah error pembacaan data .length
-                const totalTugas = Array.isArray(progressData) ? progressData.length : 0;
-                document.getElementById('user-tasks').innerText = totalTugas;
-                document.getElementById('user-points').innerText = totalTugas * 100;
+                if (Array.isArray(progressData) && progressData.length > 0) {
+                    // Ambil angka matang dari baris database Anda
+                    document.getElementById('user-tasks').innerText = progressData[0].total_tugas_selesai || 0;
+                    document.getElementById('user-points').innerText = progressData[0].total_poin || 0;
+                } else {
+                    document.getElementById('user-tasks').innerText = "0";
+                    document.getElementById('user-points').innerText = "0";
+                }
             })
             .catch(err => {
                 console.error("Gagal memuat riwayat:", err);
-                document.getElementById('user-tasks').innerText = "0";
             });
 
             // 2. Ambil Durasi Lagu
@@ -86,9 +91,6 @@
                 document.getElementById('status').innerText = `Tugas: Tonton video selama ${duration} detik.`;
                 document.getElementById('btn-play').disabled = false;
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
-            })
-            .catch(() => {
-                document.getElementById('status').innerText = "Gagal memuat durasi tugas.";
             });
         }
         
@@ -139,10 +141,11 @@
             .then(res => {
                 if (res.ok) {
                     tg.showAlert("Sukses! 100 Poin ditambahkan.");
-                    initAplikasi(); // Perbarui skor di layar secara langsung
+                    // Tunggu data diproses view Supabase sebentar lalu refresh layar
+                    setTimeout(() => { initAplikasi(); }, 1000);
                     document.getElementById('btn-claim').style.display = 'none';
                 } else {
-                    alert("Gagal menyimpan poin ke database. Periksa aturan RLS Supabase Anda.");
+                    alert("Gagal menyimpan poin ke database.");
                 }
             })
             .catch(() => {
