@@ -42,7 +42,7 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // KOREKSI UTAMA: Membaca parameter 'telegram_id' secara tepat dari URL Bot (bukan membaca 'id')
+        // AMBIL ID TELEGRAM ANDA SECARA FORCE (7659693582)
         const rawUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = rawUser && rawUser !== '0' && rawUser !== 0 ? parseInt(rawUser) : 7659693582;
         
@@ -54,8 +54,8 @@
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // PENCARIAN GANDA: Mencocokkan via telegram_id atau username huruf kecil agar data pasti ketarik
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?or=(telegram_id.eq.${user},username.ilike.${username})&select=id`;
+            // PERBAIKAN TOTAL: Hanya tembak kolom telegram_id murni, buang filter username yang bikin kueri crash
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -65,6 +65,7 @@
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
+                // Supabase akan mengembalikan susunan array data yang cocok dengan ID Anda
                 const totalTugas = progressData ? progressData.length : 0;
                 document.getElementById('user-tasks').innerText = totalTugas;
                 document.getElementById('user-points').innerText = totalTugas * 100;
