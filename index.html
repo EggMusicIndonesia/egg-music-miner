@@ -42,20 +42,21 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // SISTEM CADANGAN UTAMA: Jika parameter terpotong oleh Telegram Web, paksa gunakan fallback ke ID Anda
+        // Membaca ID & Username secara aman
         const rawUser = tg.initDataUnsafe?.user?.id;
         const user = rawUser ? String(rawUser) : (params.get('telegram_id') || '7659693582');
         
-        const rawUsername = tg.initDataUnsafe?.user?.username;
-        const username = rawUsername ? String(rawUsername) : (params.get('username') || 'eghas_music');
+        // PERBAIKAN UTAMA: Paksa username menjadi huruf kecil semua agar cocok dengan database Supabase Anda
+        const rawUsername = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music';
+        const username = String(rawUsername).toLowerCase();
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // PERBAIKAN FORMULA: Menggunakan format standard text matching yang didukung penuh oleh REST API Supabase Anda
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=eq.${username}&select=id`;
+            // PERBAIKAN QUERY: Gunakan ilike (bukan eq) agar pencarian di Supabase mengabaikan huruf kapital dari Telegram
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=ilike.${username}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
