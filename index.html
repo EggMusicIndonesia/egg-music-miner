@@ -2,6 +2,8 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
+    // Pastikan library supabase sudah dimuat sebelum ini
+    // Ganti URL dan KEY dengan milik Anda dari Dashboard Supabase
     const supabase = supabase.createClient('URL_SUPABASE_ANDA', 'KEY_SUPABASE_ANDA');
     
     const params = new URLSearchParams(window.location.search);
@@ -11,26 +13,23 @@
     async function buka() {
         if (!songId) return alert("ID Lagu tidak ditemukan!");
 
-        // 1. Ambil durasi dari database
+        // Ambil durasi
         const { data: task, error } = await supabase
             .from('tasks')
-            .select('duration') // Pastikan ada kolom 'duration' di tabel tasks
+            .select('duration')
             .eq('song_id', songId)
             .single();
 
-        const duration = task ? task.duration : 30; // Default 30 detik jika tidak ada data
+        const duration = (task && task.duration) ? task.duration : 30;
 
-        // 2. Buka YouTube
         tg.openLink('https://www.youtube.com/watch?v=' + songId);
         
-        // 3. Sembunyikan tombol tonton, tampilkan status loading
         document.getElementById('btn-play').style.display = 'none';
         const btnSelesai = document.getElementById('btn-selesai');
         btnSelesai.style.display = 'inline-block';
         btnSelesai.disabled = true;
         btnSelesai.innerText = "⏳ Menunggu (" + duration + "s)";
 
-        // 4. Countdown otomatis
         let timeLeft = duration;
         let timer = setInterval(() => {
             timeLeft--;
@@ -45,14 +44,16 @@
     }
 
     async function tandaiSelesai() {
+        if (!userId) return alert("User ID tidak terbaca!");
+        
         const { error } = await supabase
             .from('user_progress')
             .insert([{ telegram_id: userId, song_id: songId, status: 'selesai' }]);
 
         if (error) {
-            alert("Gagal: " + error.message);
+            alert("Gagal menyimpan: " + error.message);
         } else {
-            alert("Tugas tersimpan!");
+            alert("Tugas berhasil diselesaikan!");
             tg.close();
         }
     }
