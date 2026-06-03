@@ -21,7 +21,7 @@
             👤 <span id="user-name">Memuat...</span><br>
             Poin: <strong id="user-points">0</strong>
         </div>
-        <p id="status">Memuat data...</p>
+        <p id="status">Memeriksa jadwal tugas...</p>
         <button id="btn-play" class="btn-play" onclick="buka()">▶️ NONTON LAGU</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
         <button id="btn-next" class="btn-next" onclick="nextTask()">➡️ TUGAS LAINNYA</button>
@@ -30,7 +30,6 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || "oO6ZfaIMhog";
         const u = tg.initDataUnsafe?.user || { id: 7659693582, username: 'eghas_music' };
@@ -52,23 +51,22 @@
                 if (data.length > 0 && data[0].last_complete) {
                     const last = new Date(data[0].last_complete).getTime();
                     const now = new Date().getTime();
-                    const diffHours = (now - last) / (1000 * 60 * 60);
-                    
-                    if (diffHours < 24) {
-                        document.getElementById('status').innerText = "Tunggu " + Math.ceil(24 - diffHours) + " jam lagi.";
+                    const diff = (now - last) / (1000 * 60 * 60);
+
+                    if (diff < 24) {
+                        document.getElementById('status').innerText = "Tunggu " + Math.ceil(24 - diff) + " jam lagi.";
                         document.getElementById('btn-play').style.display = 'none';
                         return;
                     }
                 }
                 document.getElementById('status').innerText = "Siap menambang!";
-            } catch (e) { document.getElementById('status').innerText = "Data siap."; }
+            } catch (e) { document.getElementById('status').innerText = "System Ready."; }
         }
 
         function buka() {
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
             document.getElementById('btn-play').style.display = 'none';
             document.getElementById('btn-claim').style.display = 'block';
-            document.getElementById('status').innerText = "Sudah nonton? Klik Klaim.";
         }
 
         async function klaim() {
