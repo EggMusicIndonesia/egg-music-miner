@@ -1,50 +1,23 @@
-const { Telegraf } = require('telegraf');
-
-// Inisialisasi Bot menggunakan Token Resmi Anda
-const bot = new Telegraf('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
-
-// Daftar lagu dari database/manually
-const daftarLagu = [
-    { nama: "Lagu 1 🎵", song_id: "oO6ZfaIMhog" },
-    { nama: "Lagu 2 🎵", song_id: "EuuNyddQfJg" },
-    { nama: "Lagu 3 🎵", song_id: "3Nuso040BfM" }
-];
-
-bot.start((ctx) => {
-    ctx.reply('Selamat datang di Egg Music Miner! Ketik /tugas untuk melihat daftar tugas menonton lagu.');
+// Contoh filter tugas di sisi Bot
+bot.onText(/\/tugas/, async (msg) => {
+    const userId = msg.from.id;
+    // 1. Ambil daftar tugas yang sudah selesai dari tabel user_progress
+    const selesai = await getSelesai(userId); // Query SELECT song_id WHERE telegram_id = userId
+    
+    // 2. Daftar semua tugas
+    const semuaTugas = [
+        { id: "oO6ZfaIMhog", judul: "Lagu A" },
+        { id: "EuuNyddQfJg", judul: "Lagu B" }
+    ];
+    
+    // 3. Hanya tampilkan yang belum selesai
+    const tugasBaru = semuaTugas.filter(t => !selesai.includes(t.id));
+    
+    // 4. Kirim ke user
+    const kb = tugasBaru.map(t => [{
+        text: `▶️ ${t.judul}`,
+        web_app: { url: `https://project-g1fby.vercel.app/?song_id=${t.id}` }
+    }]);
+    
+    bot.sendMessage(msg.chat.id, tugasBaru.length > 0 ? "Pilih lagu:" : "Habis!", { reply_markup: { inline_keyboard: kb } });
 });
-
-bot.command('tugas', (ctx) => {
-    const userId = ctx.from.id; // Mengambil ID Asli Telegram User (Contoh: 7659693582)
-    const username = ctx.from.username || 'guest';
-
-    // Membuat tombol inline secara dinamis dengan menyuntikkan ID & Username ke URL
-    const tombol = daftarLagu.map(lagu => [
-        {
-            text: `▶️ Buka Music Miner (ID: ${lagu.song_id})`,
-            web_app: {
-                // PERBAIKAN MUTLAK: Menyuntikkan telegram_id secara benar agar dibaca oleh index.html
-                url: `https://project-g1fby.vercel.app/?song_id=${lagu.song_id}&telegram_id=${userId}&username=${username}`
-            }
-        }
-    ]);
-
-    ctx.reply('Silakan pilih lagu yang ingin ditonton untuk menambang poin:', {
-        reply_markup: {
-            inline_keyboard: tombol
-        }
-    });
-});
-
-// Export untuk kebutuhan Vercel Serverless Function
-module.exports = async (req, res) => {
-    try {
-        if (req.method === 'POST') {
-            await bot.handleUpdate(req.body);
-        }
-        res.status(200).send('Bot berjalan dengan baik!');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Terjadi eror pada komponen bot.');
-    }
-};
