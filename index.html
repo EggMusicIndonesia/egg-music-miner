@@ -42,18 +42,20 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Membaca ID & Username secara aman
-        const userUrl = params.get('telegram_id');
-        const user = userUrl && userUrl !== '0' ? userUrl : (tg.initDataUnsafe?.user?.id || '7659693582');
-        const username = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music'; 
+        // SISTEM CADANGAN UTAMA: Jika parameter terpotong oleh Telegram Web, paksa gunakan fallback ke ID Anda
+        const rawUser = tg.initDataUnsafe?.user?.id;
+        const user = rawUser ? String(rawUser) : (params.get('telegram_id') || '7659693582');
+        
+        const rawUsername = tg.initDataUnsafe?.user?.username;
+        const username = rawUsername ? String(rawUsername) : (params.get('username') || 'eghas_music');
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // SOLUSI SINKRONISASI: Cari menggunakan or() sehingga jika pencarian via ID gagal, ia otomatis mencocokkan via nama username Anda!
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?or=(telegram_id.eq.${user},username.eq.${username})&select=id`;
+            // PERBAIKAN FORMULA: Menggunakan format standard text matching yang didukung penuh oleh REST API Supabase Anda
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=eq.${username}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -120,7 +122,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({ 
-                    telegram_id: user,
+                    telegram_id: parseInt(user),
                     username: username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
