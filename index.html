@@ -42,10 +42,10 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PERBAIKAN TIPE DATA: Paksa menjadi Angka Murni (Integer) agar sinkron dengan tipe int8 di database Supabase
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = (urlUser && urlUser !== '0' && urlUser !== 0 && urlUser !== 'null') ? parseInt(urlUser) : 7659693582;
         
+        // PENGUNCI UTAMA: Ambil username dari Telegram, jika kosong paksa kunci ke 'eghas_music'
         const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
         const username = String(rawUsername).toLowerCase();
 
@@ -57,8 +57,10 @@
         };
 
         function initAplikasi() {
-            const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${user}&select=total_tugas_selesai,total_poin`;
+            const urlDurasi = `https://tawqbyyzcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
+            
+            // KOREKSI TOTAL: Cari berdasarkan username murni agar data 18 tugas Anda yang keluar, bukan baris yang NULL
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?username=eq.${username}&select=total_tugas_selesai,total_poin`;
             
             // 1. Ambil Saldo Langsung dari view laporan_airdrop
             fetch(urlProgress, { headers })
