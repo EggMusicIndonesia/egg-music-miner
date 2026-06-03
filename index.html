@@ -7,9 +7,9 @@
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
         .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
-        .user-info { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #444; text-align: left; }
+        .user-info { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left; }
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-play { background: #ff0000; color: white; display: block; }
+        .btn-play { background: #ff0000; color: white; }
         .btn-claim { background: #2ecc71; color: white; display: none; }
         .btn-next { background: #3498db; color: white; display: none; }
     </style>
@@ -30,8 +30,9 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
         const params = new URLSearchParams(window.location.search);
-        const songId = params.get('song_id'); 
+        const songId = params.get('song_id') || "oO6ZfaIMhog";
         const u = tg.initDataUnsafe?.user || { id: 7659693582, username: 'eghas_music' };
         
         document.getElementById('user-name').innerText = u.username;
@@ -39,18 +40,26 @@
         const headers = { 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Content-Type': 'application/json' };
 
         async function init() {
-            const res = await fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${u.id}&song_id=eq.${songId}&order=last_complete.desc&limit=1`, { headers });
-            const data = await res.json();
-            
-            if (data.length > 0 && data[0].last_complete) {
-                const diff = (new Date() - new Date(data[0].last_complete)) / (1000 * 60 * 60);
-                if (diff < 24) {
-                    document.getElementById('status').innerText = "Tunggu " + Math.ceil(24 - diff) + " jam lagi.";
-                    document.getElementById('btn-play').style.display = 'none';
-                    return;
+            try {
+                const [res, resA] = await Promise.all([
+                    fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${u.id}&song_id=eq.${songId}&order=last_complete.desc&limit=1`, { headers }),
+                    fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${u.id}`, { headers })
+                ]);
+                const data = await res.json();
+                const dataA = await resA.json();
+
+                if (dataA.length > 0) document.getElementById('user-points').innerText = dataA[0].total_poin || 0;
+
+                if (data.length > 0) {
+                    const diff = (new Date() - new Date(data[0].last_complete)) / (1000 * 60 * 60);
+                    if (diff < 24) {
+                        document.getElementById('status').innerText = "Tunggu " + Math.ceil(24 - diff) + " jam lagi.";
+                        document.getElementById('btn-play').style.display = 'none';
+                        return;
+                    }
                 }
-            }
-            document.getElementById('status').innerText = "Siap menambang!";
+                document.getElementById('status').innerText = "Siap menambang!";
+            } catch (e) { document.getElementById('status').innerText = "Data siap."; }
         }
 
         function buka() {
@@ -67,7 +76,7 @@
             });
             document.getElementById('btn-claim').style.display = 'none';
             document.getElementById('btn-next').style.display = 'block';
-            document.getElementById('status').innerText = "Sukses!";
+            document.getElementById('status').innerText = "Sukses! Poin bertambah.";
         }
 
         function nextTask() { window.location.href = "https://t.me/EggMusicMiner_bot"; }
