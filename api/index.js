@@ -1,45 +1,50 @@
 const { Telegraf } = require('telegraf');
-const { createClient } = require('@supabase/supabase-js');
 
-// Token aktif Anda
+// Inisialisasi Bot menggunakan Token Resmi Anda
 const bot = new Telegraf('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
-const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
-bot.command('start', (ctx) => {
-    return ctx.reply("Selamat datang di Egg Music Miner! Ketik /tugas untuk melihat daftar lagu.");
+// Daftar lagu dari database/manually
+const daftarLagu = [
+    { nama: "Lagu 1 🎵", song_id: "oO6ZfaIMhog" },
+    { nama: "Lagu 2 🎵", song_id: "EuuNyddQfJg" },
+    { nama: "Lagu 3 🎵", song_id: "3Nuso040BfM" }
+];
+
+bot.start((ctx) => {
+    ctx.reply('Selamat datang di Egg Music Miner! Ketik /tugas untuk melihat daftar tugas menonton lagu.');
 });
 
-bot.command('tugas', async (ctx) => {
-    try {
-        const { data, error } = await supabase.from('tasks').select('song_id');
-        
-        if (error || !data || data.length === 0) {
-            return ctx.reply("Gagal mengambil data dari database atau data kosong.");
-        }
+bot.command('tugas', (ctx) => {
+    const userId = ctx.from.id; // Mengambil ID Asli Telegram User (Contoh: 7659693582)
+    const username = ctx.from.username || 'guest';
 
-        // PERBAIKAN: Menyisipkan parameter telegram_id dan username langsung ke URL Web App tombol
-        const keyboard = data.map(song => [{
-            text: `▶️ Buka Music Miner (ID: ${song.song_id})`,
-            web_app: { 
-                url: `https://project-g1fby.vercel.app/?song_id=${song.song_id}&telegram_id=${ctx.from.id}&username=${ctx.from.username || 'guest'}` 
+    // Membuat tombol inline secara dinamis dengan menyuntikkan ID & Username ke URL
+    const tombol = daftarLagu.map(lagu => [
+        {
+            text: `▶️ Buka Music Miner (ID: ${lagu.song_id})`,
+            web_app: {
+                // PERBAIKAN MUTLAK: Menyuntikkan telegram_id secara benar agar dibaca oleh index.html
+                url: `https://project-g1fby.vercel.app/?song_id=${lagu.song_id}&telegram_id=${userId}&username=${username}`
             }
-        }]);
+        }
+    ]);
 
-        return ctx.reply("Klik tombol di bawah untuk mulai menambang:", {
-            reply_markup: { inline_keyboard: keyboard }
-        });
-    } catch (err) {
-        return ctx.reply("Terjadi kesalahan sistem: " + err.message);
-    }
+    ctx.reply('Silakan pilih lagu yang ingin ditonton untuk menambang poin:', {
+        reply_markup: {
+            inline_keyboard: tombol
+        }
+    });
 });
 
+// Export untuk kebutuhan Vercel Serverless Function
 module.exports = async (req, res) => {
     try {
         if (req.method === 'POST') {
             await bot.handleUpdate(req.body);
         }
-        return res.status(200).send('OK');
+        res.status(200).send('Bot berjalan dengan baik!');
     } catch (err) {
-        return res.status(500).send(err.message);
+        console.error(err);
+        res.status(500).send('Terjadi eror pada komponen bot.');
     }
 };
