@@ -8,94 +8,47 @@
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
         .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
-        button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; margin-top: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; margin-top: 15px; font-weight: bold; cursor: pointer; }
         .btn-play { background: #ff0000; color: white; }
-        .btn-claim { background: #555; color: #ccc; display: none; }
-        .btn-claim.active { background: #2ecc71; color: white; cursor: pointer; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-claim { background: #2ecc71; color: white; display: none; margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2 id="title">Egg Music Miner 🥚</h2>
-        <p id="status">Memuat data lagu dari database...</p>
-        <button id="btn-play" class="btn-play" onclick="play()">▶️ NONTON LAGU</button>
-        <button id="btn-claim" class="btn-claim" onclick="claim()">💰 KLAIM POIN</button>
+        <h2>Egg Music Miner 🥚</h2>
+        <p id="status">Klik tombol untuk mulai.</p>
+        <button id="btn-play" class="btn-play" onclick="mulai()">▶️ NONTON LAGU</button>
+        <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        // Gunakan URL Supabase Anda
-        const sb = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
         
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        let duration = 30; 
-        let startTime = 0;
-
-        async function init() {
-            // Mengambil durasi berdasarkan song_id yang dikirim bot
-            const { data, error } = await sb.from('tasks')
-                .select('duration_seconds')
-                .eq('song_id', songId)
-                .single();
-                
-            if (data) {
-                duration = data.duration_seconds;
-                document.getElementById('status').innerText = `Tugas: Tonton selama ${duration} detik.`;
-            } else {
-                document.getElementById('status').innerText = "Durasi standar (30 detik).";
-            }
-        }
-        init();
-
-        function play() {
-            startTime = Date.now(); // ANTI-CHEAT: Catat waktu mulai
+        // Timer sederhana tanpa database di awal agar tidak blank
+        function mulai() {
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
+            document.getElementById('status').innerText = "Mohon tonton video sampai selesai...";
+            document.getElementById('btn-play').style.display = 'none';
             
-            let sisa = duration;
-            document.getElementById('btn-play').disabled = true;
-            
-            const timer = setInterval(() => {
-                sisa--;
-                if (sisa <= 0) {
-                    clearInterval(timer);
-                    const btn = document.getElementById('btn-claim');
-                    btn.style.display = 'block';
-                    btn.className = 'btn-claim active';
-                    document.getElementById('status').innerText = "Waktu habis! Silakan klaim poin.";
-                } else {
-                    document.getElementById('status').innerText = `Menambang... Sisa: ${sisa} detik`;
-                }
-            }, 1000);
+            // Set durasi 30 detik (bisa diubah manual)
+            setTimeout(() => {
+                document.getElementById('btn-claim').style.display = 'block';
+                document.getElementById('status').innerText = "Waktu selesai! Silakan klaim.";
+            }, 30000);
         }
 
-        async function claim() {
-            // ANTI-CHEAT: Validasi waktu di sisi client sebelum kirim
-            const elapsed = (Date.now() - startTime) / 1000;
-            if (elapsed < duration) {
-                return tg.showAlert("Jangan curang! Tonton video sampai habis.");
-            }
-
-            const user = tg.initDataUnsafe?.user || { id: 0, username: "guest" };
-            document.getElementById('btn-claim').innerText = "Mengirim...";
+        async function klaim() {
+            const sb = window.supabase.createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
+            const user = tg.initDataUnsafe?.user?.id || 0;
             
-            const { error } = await sb.from('user_progress').insert([{
-                telegram_id: user.id, 
-                username: user.username, 
-                song_id: songId, 
-                completed_at: new Date().toISOString()
-            }]);
-
-            if (error) { 
-                alert("Gagal: " + error.message); 
-                document.getElementById('btn-claim').innerText = "💰 KLAIM POIN";
-            } else { 
-                tg.showAlert("Sukses! Poin telah ditambahkan."); 
-                tg.close(); 
-            }
+            const { error } = await sb.from('user_progress').insert([{telegram_id: user, song_id: songId}]);
+            
+            if (error) { alert("Error: " + error.message); } 
+            else { tg.showAlert("Sukses! Poin ditambahkan."); tg.close(); }
         }
     </script>
 </body>
