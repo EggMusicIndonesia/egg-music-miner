@@ -1,8 +1,8 @@
 const { Telegraf } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 
-// Menggunakan hardcoded token Anda yang aktif agar pasti terhubung tanpa konfigurasi env yang rumit
-const bot = new Telegraf('7581298068:AAELv84N3UfLpbe9o1V_7Z9B4gGCHl93mYQ');
+// Token baru Anda sudah dimasukkan di sini
+const bot = new Telegraf('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
 bot.command('start', (ctx) => {
@@ -11,14 +11,12 @@ bot.command('start', (ctx) => {
 
 bot.command('tugas', async (ctx) => {
     try {
-        // Ambil data langsung dari tabel tasks di database Supabase Anda
         const { data, error } = await supabase.from('tasks').select('song_id');
         
         if (error || !data || data.length === 0) {
             return ctx.reply("Gagal mengambil data dari database atau data kosong.");
         }
 
-        // Generate tombol secara otomatis untuk membuka WebApp berdasarkan data
         const keyboard = data.map(song => [{
             text: `▶️ Buka Music Miner (ID: ${song.song_id})`,
             web_app: { url: `https://project-g1fby.vercel.app/?song_id=${song.song_id}` }
@@ -32,7 +30,6 @@ bot.command('tugas', async (ctx) => {
     }
 });
 
-// Handler ekspor wajib untuk Vercel Serverless Function
 module.exports = async (req, res) => {
     try {
         if (req.method === 'POST') {
