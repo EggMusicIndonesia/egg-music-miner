@@ -1,43 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body style="text-align: center; padding: 20px; font-family: sans-serif;">
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-    <div id="player-container">
-        <button id="btn-play" onclick="buka()" style="padding: 15px 30px; font-size: 18px; background: #007bff; color: white; border: none; border-radius: 8px;">
-            ▶️ TONTON VIDEO
-        </button>
+    const supabase = supabase.createClient('URL_SUPABASE_ANDA', 'KEY_SUPABASE_ANDA');
+    
+    const params = new URLSearchParams(window.location.search);
+    const songId = params.get('song_id');
+    const userId = params.get('telegram_id');
 
-        <button id="btn-selesai" onclick="tandaiSelesai()" style="display:none; padding: 15px 30px; font-size: 18px; background: #28a745; color: white; border: none; border-radius: 8px; margin-top: 20px;">
-            ✅ TANDAI SELESAI
-        </button>
-    </div>
+    async function buka() {
+        if (!songId) return alert("ID Lagu tidak ditemukan!");
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        // 1. Ambil durasi dari database
+        const { data: task, error } = await supabase
+            .from('tasks')
+            .select('duration') // Pastikan ada kolom 'duration' di tabel tasks
+            .eq('song_id', songId)
+            .single();
+
+        const duration = task ? task.duration : 30; // Default 30 detik jika tidak ada data
+
+        // 2. Buka YouTube
+        tg.openLink('https://www.youtube.com/watch?v=' + songId);
         
-        const params = new URLSearchParams(window.location.search);
-        const songId = params.get('song_id');
+        // 3. Sembunyikan tombol tonton, tampilkan status loading
+        document.getElementById('btn-play').style.display = 'none';
+        const btnSelesai = document.getElementById('btn-selesai');
+        btnSelesai.style.display = 'inline-block';
+        btnSelesai.disabled = true;
+        btnSelesai.innerText = "⏳ Menunggu (" + duration + "s)";
 
-        function buka() {
-            if (!songId) return alert("ID Lagu tidak ditemukan!");
-            
-            // Membuka YouTube di browser asli HP agar tidak kena blokir iframe
-            tg.openLink('https://www.youtube.com/watch?v=' + songId);
-            
-            // Tampilkan tombol selesai setelah user klik buka
-            document.getElementById('btn-play').style.display = 'none';
-            document.getElementById('btn-selesai').style.display = 'inline-block';
-        }
+        // 4. Countdown otomatis
+        let timeLeft = duration;
+        let timer = setInterval(() => {
+            timeLeft--;
+            btnSelesai.innerText = "⏳ Menunggu (" + timeLeft + "s)";
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                btnSelesai.disabled = false;
+                btnSelesai.innerText = "✅ TANDAI SELESAI";
+                btnSelesai.style.background = "#28a745";
+            }
+        }, 1000);
+    }
 
-        function tandaiSelesai() {
-            // Ganti alert ini dengan kode untuk kirim data ke Supabase Anda
-            alert("Tugas selesai! (Integrasikan API Supabase di sini)");
+    async function tandaiSelesai() {
+        const { error } = await supabase
+            .from('user_progress')
+            .insert([{ telegram_id: userId, song_id: songId, status: 'selesai' }]);
+
+        if (error) {
+            alert("Gagal: " + error.message);
+        } else {
+            alert("Tugas tersimpan!");
+            tg.close();
         }
-    </script>
-</body>
-</html>
+    }
+</script>
