@@ -1,20 +1,21 @@
 bot.command('tugas', async (ctx) => {
-    // 1. Ambil SEMUA tugas dan pastikan unik
+    // 1. Ambil tugas
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
-    
-    // 2. Ambil riwayat user
     const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', ctx.from.id);
+    
+    // 2. Filter ID yang sudah dikerjakan
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
+    const belumSelesai = semuaTugas.filter(t => !selesaiIds.includes(t.song_id));
 
-    // 3. Filter tugas yang belum selesai DAN hapus duplikat (menggunakan Map)
-    const unikTugas = [...new Map(semuaTugas.map(t => [t.song_id, t])).values()];
-    const sisaTugas = unikTugas.filter(t => !selesaiIds.includes(t.song_id));
+    // 3. Hapus duplikat secara manual di kode agar rapi
+    const uniqueTasks = Array.from(new Set(belumSelesai.map(a => a.song_id)))
+        .map(id => belumSelesai.find(a => a.song_id === id));
 
-    if (sisaTugas.length === 0) return ctx.reply("Tugas harian sudah habis!");
+    if (uniqueTasks.length === 0) return ctx.reply("Semua tugas selesai!");
 
-    // 4. Kirim daftar yang sudah bersih
+    // 4. Buat keyboard
     const keyboard = {
-        inline_keyboard: sisaTugas.map(t => [{
+        inline_keyboard: uniqueTasks.map(t => [{
             text: `▶️ ${t.title}`,
             web_app: { url: `https://project-g1fby.vercel.app/?song_id=${t.song_id}` }
         }])
