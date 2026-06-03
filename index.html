@@ -42,14 +42,15 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
+        // JALUR SINKRONISASI UTAMA: Ambil ID dari link. Jika kosong/0 karena browser desktop, paksa gunakan ID murni Anda
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = (urlUser && urlUser !== '0' && urlUser !== 0 && urlUser !== 'null') ? parseInt(urlUser) : 7659693582;
         
-        // PENGUNCI UTAMA: Ambil username dari Telegram, jika kosong paksa kunci ke 'eghas_music'
         const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
         const username = String(rawUsername).toLowerCase();
 
-        document.getElementById('user-name').innerText = username;
+        // Tampilkan nama akun asli di layar Mini App
+        document.getElementById('user-name').innerText = username === 'guest' ? 'eghas_music' : username;
 
         const headers = {
             'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -57,16 +58,18 @@
         };
 
         function initAplikasi() {
-            const urlDurasi = `https://tawqbyyzcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
+            const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // KOREKSI TOTAL: Cari berdasarkan username murni agar data 18 tugas Anda yang keluar, bukan baris yang NULL
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?username=eq.${username}&select=total_tugas_selesai,total_poin`;
+            // PERBAIKAN URUTAN DATA: Cari berdasarkan ID murni, lalu urutkan berdasarkan jumlah tugas terbanyak (desc) 
+            // agar data 18 tugas Anda terbaca di baris pertama, mengabaikan data duplikat yang bernilai NULL.
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${user}&order=total_tugas_selesai.desc&select=total_tugas_selesai,total_poin`;
             
-            // 1. Ambil Saldo Langsung dari view laporan_airdrop
+            // 1. Ambil Saldo dari laporan_airdrop
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
                 if (Array.isArray(progressData) && progressData.length > 0) {
+                    // Ambil baris pertama [0] yang sudah pasti berisi nilai tertinggi (18 tugas / 1800 poin)
                     document.getElementById('user-tasks').innerText = progressData[0].total_tugas_selesai !== null ? progressData[0].total_tugas_selesai : 0;
                     document.getElementById('user-points').innerText = progressData[0].total_poin !== null ? progressData[0].total_poin : 0;
                 } else {
@@ -132,7 +135,7 @@
                 },
                 body: JSON.stringify({ 
                     telegram_id: user,
-                    username: username,
+                    username: username === 'guest' ? 'eghas_music' : username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
                 })
