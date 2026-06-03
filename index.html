@@ -3,22 +3,27 @@
 <head>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body>
-    <h2 id="info">Memuat...</h2>
-    <button onclick="buka()">TONTON VIDEO</button>
+<body style="padding:20px; font-family:sans-serif;">
+    <h2 id="info">Mengecek ID...</h2>
+    <button onclick="buka()" style="padding:15px; width:100%;">TONTON VIDEO</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
+        
+        // Mengambil parameter dari URL
         const params = new URLSearchParams(window.location.search);
         const sId = params.get('song_id');
         
-        document.getElementById('info').innerText = "Video ID: " + (sId || "Tidak ditemukan");
+        // Debugging: Menampilkan ID yang terbaca di layar
+        document.getElementById('info').innerText = sId ? "ID Terbaca: " + sId : "ID GAGAL TERBACA!";
 
         function buka() {
-            // Kita gunakan replace agar tidak kena cache browser
-            const url = 'https://www.youtube.com/watch?v=' + (sId || 'dQw4w9WgXcQ');
-            tg.openLink(url);
+            if (!sId) {
+                alert("URL tidak mengandung ?song_id=... (Bot mengirim ID yang salah)");
+                return;
+            }
+            tg.openLink('https://www.youtube.com/watch?v=' + sId);
         }
     </script>
 </body>
