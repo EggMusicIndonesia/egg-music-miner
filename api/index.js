@@ -1,23 +1,34 @@
-// Contoh filter tugas di sisi Bot
+// Contoh update logika di api/index.js
 bot.onText(/\/tugas/, async (msg) => {
     const userId = msg.from.id;
-    // 1. Ambil daftar tugas yang sudah selesai dari tabel user_progress
-    const selesai = await getSelesai(userId); // Query SELECT song_id WHERE telegram_id = userId
-    
-    // 2. Daftar semua tugas
-    const semuaTugas = [
-        { id: "oO6ZfaIMhog", judul: "Lagu A" },
-        { id: "EuuNyddQfJg", judul: "Lagu B" }
+
+    // 1. Ambil semua tugas yang sudah dikerjakan user dari Supabase
+    const { data: progress } = await supabase
+        .from('user_progress')
+        .select('song_id')
+        .eq('telegram_id', userId);
+
+    const selesaiIds = progress ? progress.map(p => p.song_id) : [];
+
+    // 2. Daftar semua lagu yang tersedia
+    const semuaLagu = [
+        { id: "oO6ZfaIMhog", title: "Lagu A" },
+        { id: "EuuNyddQfJg", title: "Lagu B" },
+        { id: "3Nuso040BfM", title: "Lagu C" }
     ];
-    
-    // 3. Hanya tampilkan yang belum selesai
-    const tugasBaru = semuaTugas.filter(t => !selesai.includes(t.id));
-    
-    // 4. Kirim ke user
-    const kb = tugasBaru.map(t => [{
-        text: `▶️ ${t.judul}`,
-        web_app: { url: `https://project-g1fby.vercel.app/?song_id=${t.id}` }
-    }]);
-    
-    bot.sendMessage(msg.chat.id, tugasBaru.length > 0 ? "Pilih lagu:" : "Habis!", { reply_markup: { inline_keyboard: kb } });
+
+    // 3. Filter: Hanya ambil lagu yang ID-nya tidak ada di selesaiIds
+    const sisaTugas = semuaLagu.filter(lagu => !selesaiIds.includes(lagu.id));
+
+    if (sisaTugas.length === 0) {
+        bot.sendMessage(msg.chat.id, "Tugas harian sudah habis. Kembali lagi besok!");
+    } else {
+        const kb = sisaTugas.map(t => [{
+            text: `▶️ ${t.title}`,
+            web_app: { url: `https://project-g1fby.vercel.app/?song_id=${t.id}` }
+        }]);
+        bot.sendMessage(msg.chat.id, "Pilih lagu yang belum ditonton:", {
+            reply_markup: { inline_keyboard: kb }
+        });
+    }
 });
