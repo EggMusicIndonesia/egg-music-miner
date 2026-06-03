@@ -8,27 +8,23 @@
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
         .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
         .user-info { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #444; font-size: 14px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
-        .user-detail { display: flex; flex-direction: column; gap: 4px; }
         .poin-box { color: #2ecc71; font-weight: bold; font-size: 18px; text-align: right; }
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; margin-top: 15px; font-weight: bold; cursor: pointer; }
         .btn-play { background: #ff0000; color: white; }
         .btn-claim { background: #2ecc71; color: white; display: none; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
         <div class="user-info">
-            <div class="user-detail">
-                <span>👤 <strong id="user-name">Loading...</strong></span>
-                <span style="font-size: 12px; color: #aaa;">Tugas Selesai: <strong id="user-tasks" style="color: #fff;">0</strong></span>
+            <div>
+                <span>👤 <strong id="user-name">User</strong></span><br>
+                <span style="font-size: 12px; color: #aaa;">Tugas: <strong id="user-tasks">0</strong></span>
             </div>
-            <div class="poin-box">
-                💰 <span id="user-points">0</span> <span style="font-size: 12px; color: #2ecc71;">Poin</span>
-            </div>
+            <div class="poin-box">💰 <span id="user-points">0</span> Poin</div>
         </div>
-        <p id="status">Menghubungkan...</p>
+        <p id="status">Memuat data...</p>
         <button id="btn-play" class="btn-play" onclick="buka()" disabled>Mohon Tunggu...</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
@@ -39,64 +35,13 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PENGUNCI ID & USERNAME: Prioritaskan ID 7659693582 jika data URL rusak
+        // PENGUNCI ID: Paksa pakai ID Anda sebagai pemilik utama jika terjadi error di browser
         const userId = parseInt(params.get('telegram_id') || tg.initDataUnsafe?.user?.id || 7659693582);
         const username = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
-
         document.getElementById('user-name').innerText = username;
 
         const headers = {'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'};
 
         function initAplikasi() {
-            // Mengambil langsung dari tabel laporan_airdrop berdasarkan telegram_id
-            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${userId}`, { headers })
-            .then(res => res.json())
-            .then(data => {
-                const userAkun = data.find(item => item.total_tugas_selesai !== null) || data[0] || {};
-                document.getElementById('user-tasks').innerText = userAkun.total_tugas_selesai || 0;
-                document.getElementById('user-points').innerText = userAkun.total_poin || 0;
-            });
-
-            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`, { headers })
-            .then(res => res.json())
-            .then(data => {
-                window.duration = data[0]?.duration_seconds || 30;
-                document.getElementById('status').innerText = `Tugas: Tonton ${window.duration} detik.`;
-                document.getElementById('btn-play').disabled = false;
-                document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
-            });
-        }
-        
-        initAplikasi();
-
-        function buka() {
-            window.startTime = Date.now();
-            tg.openLink('https://www.youtube.com/watch?v=' + songId);
-            document.getElementById('btn-play').style.display = 'none';
-            let sisa = window.duration;
-            window.timer = setInterval(() => {
-                sisa--;
-                if (sisa <= 0) {
-                    clearInterval(window.timer);
-                    document.getElementById('btn-claim').style.display = 'block';
-                    document.getElementById('status').innerText = "Waktu selesai! Klaim poin.";
-                } else {
-                    document.getElementById('status').innerText = `Sisa waktu: ${sisa} detik`;
-                }
-            }, 1000);
-        }
-
-        function klaim() {
-            fetch('https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress', {
-                method: 'POST',
-                headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ telegram_id: userId, username: username, song_id: songId, completed_at: new Date().toISOString() })
-            }).then(() => {
-                tg.showAlert("Sukses! 100 Poin ditambahkan.");
-                setTimeout(initAplikasi, 1000);
-                document.getElementById('btn-claim').style.display = 'none';
-            });
-        }
-    </script>
-</body>
-</html>
+            // Ambil data dari laporan_airdrop berdasarkan ID, urutkan berdasarkan tugas terbanyak
+            fetch(`
