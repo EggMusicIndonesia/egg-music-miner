@@ -7,6 +7,7 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 bot.command('tugas', async (ctx) => {
     const userId = String(ctx.from.id);
 
+    // Ambil data dari Supabase
     const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
@@ -15,11 +16,15 @@ bot.command('tugas', async (ctx) => {
         .limit(1)
         .maybeSingle();
 
-    // Tampilkan angka langsung ke chat, tidak perlu buka Web App untuk lihat data
+    // Definisikan angka
+    const tugas = laporan ? laporan.total_tugas_selesai : 0;
+    const poin = laporan ? laporan.total_poin : 0;
+
+    // PESAN DENGAN ANGKA (Ini yang akan muncul di chat)
     const text = `📊 *Status Progres Anda*\n\n` +
-                 `✅ Tugas Selesai: ${laporan ? laporan.total_tugas_selesai : 0}\n` +
-                 `💰 Total Poin: ${laporan ? laporan.total_poin : 0} pts\n\n` +
-                 `Tekan tombol untuk buka player:`;
+                 `✅ Tugas Selesai: ${tugas}\n` +
+                 `💰 Total Poin: ${poin} pts\n\n` +
+                 `Klik tombol di bawah untuk lanjut:`;
 
     await ctx.reply(text, {
         parse_mode: 'Markdown',
