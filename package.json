@@ -1,4 +1,9 @@
-"dependencies": {
-  "grammy": "^1.x.x",
-  "@supabase/supabase-js": "^2.x.x"
+{
+  "name": "egg-music-miner",
+  "version": "1.0.0",
+  "main": "api/index.js",
+  "dependencies": {
+    "grammy": "^1.20.3",
+    "@supabase/supabase-js": "^2.39.0"
+  }
 }
