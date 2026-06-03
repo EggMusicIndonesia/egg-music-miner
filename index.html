@@ -18,13 +18,13 @@
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
         <div class="user-info">
-            <div>👤 <strong>eghas_music</strong><br>
+            <div>👤 <strong id="user-name">User</strong><br>
                  <span style="font-size: 12px; color: #aaa;">Tugas: <strong id="user-tasks">0</strong></span>
             </div>
             <div class="poin-box">💰 <span id="user-points">0</span> Poin</div>
         </div>
-        <p id="status">Memuat data asli Anda...</p>
-        <button id="btn-play" class="btn-play" onclick="buka()">▶️ NONTON LAGU</button>
+        <p id="status">Memuat...</p>
+        <button id="btn-play" class="btn-play" onclick="buka()" disabled>▶️ NONTON LAGU</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
 
@@ -32,48 +32,47 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // ID & Username Statis (Tidak akan berubah)
-        const MY_ID = 7659693582;
-        const MY_USER = "eghas_music";
-        const songId = "oO6ZfaIMhog";
+        // Mengambil ID & Username dari Telegram secara otomatis
+        const userId = tg.initDataUnsafe?.user?.id || 7659693582; 
+        const username = tg.initDataUnsafe?.user?.username || 'eghas_music';
+        
+        document.getElementById('user-name').innerText = username;
 
         const headers = {
             'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
             'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
         };
 
-        function initAplikasi() {
-            // Langsung panggil data berdasarkan ID Anda
-            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${MY_ID}`, { headers })
+        function updateData() {
+            // Mengambil data berdasarkan ID siapa saja yang membuka (Dinamis)
+            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${userId}`, { headers })
             .then(res => res.json())
             .then(data => {
                 const userAkun = data[0] || {};
                 document.getElementById('user-tasks').innerText = userAkun.total_tugas_selesai || 0;
                 document.getElementById('user-points').innerText = userAkun.total_poin || 0;
-                document.getElementById('status').innerText = "Data berhasil dimuat.";
+                document.getElementById('status').innerText = "Data dimuat.";
             });
         }
         
-        initAplikasi();
+        updateData();
 
         function buka() {
             window.startTime = Date.now();
-            tg.openLink('https://www.youtube.com/watch?v=' + songId);
+            tg.openLink('https://www.youtube.com/watch?v=oO6ZfaIMhog');
             document.getElementById('btn-play').style.display = 'none';
             document.getElementById('btn-claim').style.display = 'block';
-            document.getElementById('status').innerText = "Tonton video, lalu klik Klaim.";
+            document.getElementById('status').innerText = "Silakan tonton video...";
         }
 
         function klaim() {
             fetch('https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress', {
                 method: 'POST',
                 headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                body: JSON.stringify({ telegram_id: MY_ID, username: MY_USER, song_id: songId, completed_at: new Date().toISOString() })
+                body: JSON.stringify({ telegram_id: userId, username: username, song_id: "oO6ZfaIMhog", completed_at: new Date().toISOString() })
             }).then(() => {
-                tg.showAlert("Sukses! Data dikirim.");
-                initAplikasi();
-                document.getElementById('btn-claim').style.display = 'none';
-                document.getElementById('btn-play').style.display = 'block';
+                tg.showAlert("Sukses! Poin tersimpan.");
+                updateData();
             });
         }
     </script>
