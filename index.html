@@ -42,11 +42,11 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PERBAIKAN TOTAL: Pastikan ID dibaca sebagai ANGKA MURNI (bukan string teks teks)
-        const rawUser = tg.initDataUnsafe?.user?.id || params.get('telegram_id');
+        // KOREKSI UTAMA: Membaca parameter 'telegram_id' secara tepat dari URL Bot (bukan membaca 'id')
+        const rawUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = rawUser && rawUser !== '0' && rawUser !== 0 ? parseInt(rawUser) : 7659693582;
         
-        const rawUsername = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music';
+        const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
         const username = String(rawUsername).toLowerCase();
 
         document.getElementById('user-name').innerText = username;
@@ -54,7 +54,7 @@
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // JALUR SINKRONISASI MUTLAK: Mencocokkan angka murni telegram_id atau kembaran username huruf kecil
+            // PENCARIAN GANDA: Mencocokkan via telegram_id atau username huruf kecil agar data pasti ketarik
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?or=(telegram_id.eq.${user},username.ilike.${username})&select=id`;
             
             const headers = {
@@ -65,7 +65,6 @@
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
-                // Jika data ditemukan, hitung total baris tugasnya
                 const totalTugas = progressData ? progressData.length : 0;
                 document.getElementById('user-tasks').innerText = totalTugas;
                 document.getElementById('user-points').innerText = totalTugas * 100;
@@ -75,7 +74,7 @@
             fetch(urlDurasi, { headers })
             .then(res => res.json())
             .then(data => {
-                let duration = 30; // standar sisa waktu
+                let duration = 30;
                 if(data && data.length > 0) {
                     duration = data[0].duration_seconds;
                 }
