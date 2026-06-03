@@ -42,9 +42,12 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // JALUR AMAN: Ambil telegram_id dari URL. Jika terpotong (bernilai '0', 0, atau null), paksa isi dengan ID Anda: 7659693582
-        const rawUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
-        const user = (rawUser && rawUser !== '0' && rawUser !== 0) ? parseInt(rawUser) : 7659693582;
+        // PENGAMAN HP & DESKTOP: Ambil ID Telegram Anda. Jika terpotong atau bernilai 0, paksa pakai ID Anda murni
+        let user = 7659693582;
+        const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
+        if (urlUser && urlUser !== '0' && urlUser !== 0 && !isNaN(urlUser)) {
+            user = parseInt(urlUser);
+        }
         
         const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
         const username = String(rawUsername).toLowerCase();
@@ -53,8 +56,6 @@
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            
-            // Mengambil data murni berdasarkan ID yang sudah dipastikan valid angka murni
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
             const headers = {
@@ -62,15 +63,7 @@
                 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
             };
 
-            fetch(urlProgress, { headers })
-            .then(res => res.json())
-            .then(progressData => {
-                const totalTugas = progressData ? progressData.length : 0;
-                document.getElementById('user-tasks').innerText = totalTugas;
-                document.getElementById('user-points').innerText = totalTugas * 100;
-            })
-            .catch(() => console.log("Gagal memuat history poin"));
-
+            // Ambil Data Durasi Tugas
             fetch(urlDurasi, { headers })
             .then(res => res.json())
             .then(data => {
@@ -82,7 +75,20 @@
                 document.getElementById('status').innerText = `Tugas: Tonton video selama ${duration} detik.`;
                 document.getElementById('btn-play').disabled = false;
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
+            })
+            .catch(() => {
+                document.getElementById('status').innerText = "Gagal memuat durasi tugas.";
             });
+
+            // Ambil Data Riwayat Saldo Poin
+            fetch(urlProgress, { headers })
+            .then(res => res.json())
+            .then(progressData => {
+                const totalTugas = progressData ? progressData.length : 0;
+                document.getElementById('user-tasks').innerText = totalTugas;
+                document.getElementById('user-points').innerText = totalTugas * 100;
+            })
+            .catch(() => console.log("Gagal memuat history poin"));
         }
         
         initAplikasi();
