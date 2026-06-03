@@ -7,8 +7,8 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 bot.command('tugas', async (ctx) => {
     const userId = String(ctx.from.id);
 
-    // Ambil data langsung dari Supabase
-    const { data: laporan, error } = await supabase
+    // 1. Ambil data dengan paksa (order DESC)
+    const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
         .eq('telegram_id', userId)
@@ -16,25 +16,26 @@ bot.command('tugas', async (ctx) => {
         .limit(1)
         .maybeSingle();
 
-    // Pastikan nilai tidak kosong
+    // 2. Siapkan variabel angka
     const tugas = laporan ? laporan.total_tugas_selesai : 0;
     const poin = laporan ? laporan.total_poin : 0;
 
-    // Pesan yang langsung menampilkan angka (seperti yang Anda inginkan)
-    let message = `📊 *Status Progres Anda*\n`;
-    message += `Tugas Selesai: ${tugas}\n`;
-    message += `Total Poin: ${poin} pts\n\n`;
-    message += `Klik tombol untuk mengerjakan tugas:`;
+    // 3. KIRIM PESAN DENGAN ANGKA (Ini yang akan muncul di chat)
+    const text = `📊 *Status Progres Anda*\n\n` +
+                 `Tugas Selesai: ${tugas}\n` +
+                 `Total Poin: ${poin} pts\n\n` +
+                 `Klik tombol di bawah untuk lanjut mengerjakan tugas:`;
 
-    // Tombol tetap ada agar Anda bisa membuka video
-    const keyboard = {
-        inline_keyboard: [[{
-            text: "▶️ Kerjakan Tugas",
-            web_app: { url: `https://project-g1fby.vercel.app/?telegram_id=${userId}` }
-        }]]
-    };
-
-    await ctx.reply(message, { parse_mode: 'Markdown', reply_markup: keyboard });
+    // 4. Kirim dengan tombol
+    await ctx.reply(text, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [[{
+                text: "▶️ Buka Player & Kerjakan Tugas",
+                web_app: { url: `https://project-g1fby.vercel.app/?telegram_id=${userId}` }
+            }]]
+        }
+    });
 });
 
 module.exports = webhookCallback(bot, 'http');
