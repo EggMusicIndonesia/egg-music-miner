@@ -7,7 +7,6 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 bot.command('tugas', async (ctx) => {
     const userId = String(ctx.from.id);
 
-    // 1. Ambil data progres
     const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
@@ -16,21 +15,17 @@ bot.command('tugas', async (ctx) => {
         .limit(1)
         .maybeSingle();
 
-    const tugas = laporan ? laporan.total_tugas_selesai : 0;
-    const poin = laporan ? laporan.total_poin : 0;
-
-    // 2. Teks ini yang akan muncul di Telegram
+    // Tampilkan angka langsung ke chat, tidak perlu buka Web App untuk lihat data
     const text = `📊 *Status Progres Anda*\n\n` +
-                 `✅ Tugas Selesai: ${tugas}\n` +
-                 `💰 Total Poin: ${poin} pts\n\n` +
-                 `Klik tombol di bawah untuk mengerjakan tugas:`;
+                 `✅ Tugas Selesai: ${laporan ? laporan.total_tugas_selesai : 0}\n` +
+                 `💰 Total Poin: ${laporan ? laporan.total_poin : 0} pts\n\n` +
+                 `Tekan tombol untuk buka player:`;
 
-    // 3. Kirim pesan dengan angka tersebut
     await ctx.reply(text, {
         parse_mode: 'Markdown',
         reply_markup: {
             inline_keyboard: [[{
-                text: "▶️ Buka Player & Kerjakan Tugas",
+                text: "▶️ Buka Player",
                 web_app: { url: `https://project-g1fby.vercel.app/?telegram_id=${userId}` }
             }]]
         }
