@@ -42,24 +42,25 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PERBAIKAN: Mengambil data user langsung menggunakan fungsi bawaan Telegram WebApp SDK yang resmi
-        const user = tg.initDataUnsafe?.user?.id || 0;
-        const username = tg.initDataUnsafe?.user?.username || 'eghas_music'; 
+        // Membaca data username dari Telegram WebApp secara dinamis
+        let usernameRaw = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music';
+        // PERBAIKAN: Paksa menjadi huruf kecil semua agar COCOK dengan database Supabase Anda
+        const username = usernameRaw.toLowerCase(); 
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // PERBAIKAN QUERY: Utamakan mencari berdasarkan username dari Telegram agar data riwayat langsung COCOK
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=eq.${username}&select=id`;
+            // PERBAIKAN QUERY: Menggunakan ilike (bukan eq) agar pencarian nama tidak sensitif huruf kapital
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=ilike.${username}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
                 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
             };
 
-            // Ambil total history tugas dari database
+            // Ambil total riwayat tugas dari database
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
@@ -126,7 +127,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({ 
-                    telegram_id: user !== 0 ? user : 7659693582, // Gunakan fallback ID asli Anda jika tg reading terhambat di WebApp browser
+                    telegram_id: tg.initDataUnsafe?.user?.id || 7659693582,
                     username: username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
@@ -135,7 +136,6 @@
             .then(res => {
                 if (res.ok) {
                     tg.showAlert("Sukses! 100 Poin ditambahkan.");
-                    // Segera segarkan nilai poin di layar saat sukses klaim
                     initAplikasi();
                 } else {
                     alert("Gagal menyimpan poin.");
