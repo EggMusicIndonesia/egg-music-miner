@@ -1,29 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>body{background:#000;color:#fff;text-align:center;font-family:sans-serif;padding:20px;}</style>
 </head>
-<body style="padding:20px; font-family:sans-serif;">
-    <h2 id="info">Mengecek ID...</h2>
-    <button onclick="buka()" style="padding:15px; width:100%;">TONTON VIDEO</button>
+<body>
+    <div id="player"></div>
+    <h3 id="timer">Siap untuk mining?</h3>
+    <button id="btn" onclick="start()" style="padding:15px; background:green; color:white; border:none;">MULAI TONTON</button>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        
-        // Mengambil parameter dari URL
         const params = new URLSearchParams(window.location.search);
-        const sId = params.get('song_id');
-        
-        // Debugging: Menampilkan ID yang terbaca di layar
-        document.getElementById('info').innerText = sId ? "ID Terbaca: " + sId : "ID GAGAL TERBACA!";
+        const userId = params.get('telegram_id');
+        const songId = params.get('song_id');
 
-        function buka() {
-            if (!sId) {
-                alert("URL tidak mengandung ?song_id=... (Bot mengirim ID yang salah)");
-                return;
-            }
-            tg.openLink('https://www.youtube.com/watch?v=' + sId);
+        // Embed Video
+        document.getElementById('player').innerHTML = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${songId}?autoplay=1"></iframe>`;
+
+        function start() {
+            document.getElementById('btn').style.display = 'none';
+            let sisa = 30;
+            let i = setInterval(async () => {
+                sisa--;
+                document.getElementById('timer').innerText = "Mining sisa: " + sisa + " detik";
+                if(sisa <= 0) {
+                    clearInterval(i);
+                    // Kirim ke Supabase
+                    await fetch('/api/complete', { method: 'POST', body: JSON.stringify({ userId, songId }) });
+                    alert("Tugas selesai! Poin dikirim.");
+                    tg.close();
+                }
+            }, 1000);
         }
     </script>
 </body>
