@@ -12,12 +12,12 @@ bot.command('tugas', async (ctx) => {
     const { data: laporan } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
-        .eq('telegram_id', userId)
+        .eq('telegram_id', String(userId))
         .single();
 
     // 2. Ambil data tugas
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
-    const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
+    const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', String(userId))
     
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
     const sisaTugas = semuaTugas.filter(t => !selesaiIds.includes(t.song_id));
