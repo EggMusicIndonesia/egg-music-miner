@@ -14,41 +14,24 @@
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
-        <p id="status">Memuat data...</p>
-        <button id="btn-play" class="btn-play" onclick="buka()">▶️ NONTON LAGU</button>
+        <p id="song-title">Memuat lagu...</p>
+        <button id="btn-play" class="btn-play" onclick="buka()">▶️ TONTON SEKARANG</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
+        // Mengambil ID lagu dari URL yang dikirim bot
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id');
-        const user = tg.initDataUnsafe?.user || { id: 12345 }; // Default ID untuk test
+        
+        document.getElementById('song-title').innerText = "ID Lagu: " + songId;
 
-        // Fungsi untuk buka YouTube
         function buka() {
-            tg.openLink('https://www.youtube.com/watch?v=' + songId);
-            // Setelah nonton, user balik dan klik "Klaim"
-            document.getElementById('status').innerHTML = '<button onclick="klaim()" style="background:#2ecc71">💰 KLAIM POIN</button>';
+            if (!songId) return alert("ID Lagu tidak ditemukan!");
+            window.open('https://www.youtube.com/watch?v=' + songId, '_blank');
         }
-
-        // Fungsi klaim ke Supabase
-        async function klaim() {
-            const res = await fetch('https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress', {
-                method: 'POST',
-                headers: {
-                    'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-                    'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ telegram_id: user.id, song_id: songId })
-            });
-            if(res.ok) {
-                alert("Berhasil!");
-                tg.close();
-            }
-        }
-        document.getElementById('status').innerText = "Siap menambang!";
     </script>
 </body>
 </html>
