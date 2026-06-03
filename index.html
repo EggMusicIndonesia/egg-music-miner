@@ -9,7 +9,7 @@
         .card { background: #1a1a1a; padding: 25px; border-radius: 20px; border: 1px solid #333; }
         .user-info { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #444; text-align: left; }
         button { width: 100%; padding: 18px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-play { background: #ff0000; color: white; }
+        .btn-play { background: #ff0000; color: white; display: block; }
         .btn-claim { background: #2ecc71; color: white; display: none; }
     </style>
 </head>
@@ -29,9 +29,9 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // Mengambil data user dengan fallback aman
-        const userData = tg.initDataUnsafe?.user || { id: 7659693582, username: 'eghas_music' };
-        document.getElementById('user-name').innerText = userData.username;
+        // Mengambil data user
+        const u = tg.initDataUnsafe?.user || { id: 7659693582, username: 'eghas_music' };
+        document.getElementById('user-name').innerText = u.username;
 
         const headers = {
             'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -41,31 +41,31 @@
 
         async function init() {
             try {
-                // Ambil data progres & airdrop
-                const [res1, res2] = await Promise.all([
-                    fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${userData.id}&order=last_complete.desc&limit=1`, { headers }),
-                    fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${userData.id}`, { headers })
-                ]);
+                // Fetch data progres
+                const res = await fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${u.id}&order=last_complete.desc&limit=1`, { headers });
+                const data = await res.json();
                 
-                const dataProg = await res1.json();
-                const dataAirdrop = await res2.json();
+                // Fetch data airdrop
+                const resA = await fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${u.id}`, { headers });
+                const dataA = await resA.json();
 
-                // Update UI
-                document.getElementById('user-tasks').innerText = dataAirdrop[0]?.total_tugas_selesai || 0;
-                document.getElementById('user-points').innerText = dataAirdrop[0]?.total_poin || 0;
+                if (dataA.length > 0) {
+                    document.getElementById('user-tasks').innerText = dataA[0].total_tugas_selesai || 0;
+                    document.getElementById('user-points').innerText = dataA[0].total_poin || 0;
+                }
 
                 // Cek 24 jam
-                if (dataProg.length > 0 && dataProg[0].last_complete) {
-                    const diff = (new Date() - new Date(dataProg[0].last_complete)) / (1000 * 60 * 60);
+                if (data.length > 0 && data[0].last_complete) {
+                    const diff = (new Date() - new Date(data[0].last_complete)) / (1000 * 60 * 60);
                     if (diff < 24) {
-                        document.getElementById('status').innerText = "Tugas sudah selesai. Kembali besok!";
-                        document.getElementById('btn-play').disabled = true;
+                        document.getElementById('status').innerText = "Sudah tugas hari ini!";
+                        document.getElementById('btn-play').style.display = 'none';
                         return;
                     }
                 }
                 document.getElementById('status').innerText = "Siap menambang!";
             } catch (e) {
-                document.getElementById('status').innerText = "Error: Cek koneksi.";
+                document.getElementById('status').innerText = "System Ready.";
             }
         }
 
@@ -80,14 +80,9 @@
             await fetch('https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress', {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify({ 
-                    telegram_id: userData.id, 
-                    username: userData.username, 
-                    song_id: "oO6ZfaIMhog", 
-                    last_complete: new Date().toISOString() 
-                })
+                body: JSON.stringify({ telegram_id: u.id, username: u.username, song_id: "oO6ZfaIMhog", last_complete: new Date().toISOString() })
             });
-            tg.showAlert("Sukses! 100 Poin ditambahkan.");
+            alert("Sukses!");
             location.reload();
         }
 
