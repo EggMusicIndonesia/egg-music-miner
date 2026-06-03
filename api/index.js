@@ -7,18 +7,24 @@ const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_pu
 bot.command('tugas', async (ctx) => {
     const userId = ctx.from.id;
 
-    // 1. Ambil semua tugas, progress user, dan hitung poin
+    // 1. Ambil data dari tabel laporan_airdrop untuk akurasi poin & progres
+    const { data: laporan } = await supabase
+        .from('laporan_airdrop')
+        .select('total_tugas_selesai, total_poin')
+        .eq('telegram_id', userId)
+        .single();
+
+    const jumlahSelesai = laporan ? laporan.total_tugas_selesai : 0;
+    const totalPoin = laporan ? laporan.total_poin : 0;
+
+    // 2. Ambil semua daftar tugas dan filter yang sudah dikerjakan
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
     const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
     
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
-    const jumlahSelesai = selesaiIds.length;
-    const totalPoin = jumlahSelesai * 10; // Asumsi 1 tugas = 10 poin
-
-    // 2. Filter tugas yang belum dikerjakan
     const sisaTugas = semuaTugas.filter(t => !selesaiIds.includes(t.song_id));
 
-    // 3. Respon ke user
+    // 3. Susun pesan status
     let message = `📊 *Status Progres Anda*\n`;
     message += `Tugas Selesai: ${jumlahSelesai}\n`;
     message += `Total Poin: ${totalPoin} pts\n\n`;
