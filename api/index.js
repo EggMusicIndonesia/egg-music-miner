@@ -1,30 +1,27 @@
+const { Telegraf } = require('telegraf');
+const { createClient } = require('@supabase/supabase-js');
+
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+bot.command('start', (ctx) => ctx.reply('Selamat datang di Egg Music Miner! Ketik /tugas untuk mulai.'));
+
 bot.command('tugas', async (ctx) => {
     const userId = String(ctx.from.id);
-
-    // 1. Selalu ambil data TERBARU dari database setiap kali perintah diketik
-    const { data: laporan } = await supabase
-        .from('laporan_airdrop')
-        .select('total_tugas_selesai, total_poin, song_id')
-        .eq('telegram_id', userId)
-        .maybeSingle();
-
-    const tugas = laporan?.total_tugas_selesai || 0;
-    const poin = laporan?.total_poin || 0;
+    const { data: user } = await supabase.from('laporan_airdrop').select('*').eq('telegram_id', userId).maybeSingle();
     
-    // 2. Ambil song_id TERBARU dari kolom database
-    const currentSongId = laporan?.song_id || 'dQw4w9WgXcQ'; 
+    const tugas = user?.total_tugas_selesai || 0;
+    const poin = user?.total_poin || 0;
+    const songId = user?.song_id || 'dQw4w9WgXcQ';
 
-    // 3. Masukkan ID TERBARU ke dalam URL Web App
-    const webAppUrl = `https://project-g1fby.vercel.app/?telegram_id=${userId}&song_id=${currentSongId}`;
+    const webAppUrl = `https://project-g1fby.vercel.app/?telegram_id=${userId}&song_id=${songId}`;
 
-    const text = `📊 *Status Progres Anda*\n\n✅ Tugas: ${tugas}\n💰 Poin: ${poin} pts`;
-
-    await ctx.reply(text, {
+    await ctx.reply(`📊 *Progres Anda*\n\n✅ Tugas: ${tugas}\n💰 Poin: ${poin}`, {
         parse_mode: 'Markdown',
         reply_markup: {
-            inline_keyboard: [[
-                { text: "▶️ Buka Player", web_app: { url: webAppUrl } }
-            ]]
+            inline_keyboard: [[{ text: "▶️ MULAI MINING", web_app: { url: webAppUrl } }]]
         }
     });
 });
+
+module.exports = (req, res) => bot.handleUpdate(req.body, res);
