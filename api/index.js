@@ -17,10 +17,12 @@ bot.command('tugas', async (ctx) => {
 
     // 2. Daftar semua tugas yang tersedia
     const semuaLagu = [
-        { id: "oO6ZfaIMhog", title: "Lagu A" },
-        { id: "EuuNyddQfJg", title: "Lagu B" },
-        { id: "3Nuso040BfM", title: "Lagu C" }
-    ];
+    { id: "oO6ZfaIMhog", title: "Lagu A" },
+    { id: "EuuNyddQfJg", title: "Lagu B" },
+    { id: "3Nuso040BfM", title: "Lagu C" },
+    { id: "NUyNaPazni8", title: "Lagu D" },
+    { id: "phbDRO_7vMs", title: "Lagu E" }
+];
 
     // 3. FILTER: Hanya tampilkan lagu yang BELUM ada di selesaiIds
     const sisaTugas = semuaLagu.filter(lagu => !selesaiIds.includes(lagu.id));
