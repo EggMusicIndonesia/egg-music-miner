@@ -42,17 +42,21 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PENGAMAN MANDIRI: Jika Telegram Web Desktop mengirimkan id=0, paksa isi menggunakan ID murni Anda
+        // 1. Ambil Parameter Telegram ID secara aman
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         let user = 7659693582; 
         if (urlUser && urlUser !== '0' && urlUser !== 0 && urlUser !== 'null' && urlUser !== 'undefined') {
             user = parseInt(urlUser);
         }
         
-        const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
-        const username = String(rawUsername).toLowerCase();
+        // 2. Ambil Parameter Username. Jika terpotong atau bernilai 'guest', paksa kunci ke 'eghas_music' sebagai pemilik utama
+        const urlUsername = params.get('username') || tg.initDataUnsafe?.user?.username;
+        let username = 'eghas_music';
+        if (urlUsername && urlUsername !== 'guest' && urlUsername !== 'null' && urlUsername !== 'undefined') {
+            username = String(urlUsername).toLowerCase();
+        }
 
-        document.getElementById('user-name').innerText = username === 'guest' ? 'eghas_music' : username;
+        document.getElementById('user-name').innerText = username;
 
         const headers = {
             'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -62,15 +66,15 @@
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // Perbaikan Kueri: Ambil data berdasarkan nama user murni yang terbukti hanya ada 1 baris valid berisi 18 tugas
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?username=eq.${username === 'guest' ? 'eghas_music' : username}`;
+            // Logika Fleksibel: Cari berdasarkan username murni agar data 18 tugas Anda terbaca dengan sempurna
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?username=eq.${username}`;
             
-            // 1. Ambil Saldo Poin
+            // 1. Ambil Saldo Poin dari View laporan_airdrop
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
                 if (Array.isArray(progressData) && progressData.length > 0) {
-                    // Cari baris yang datanya tidak bernilai null
+                    // Cari baris data yang total_tugas_selesai miliknya tidak kosong (bukan NULL)
                     const dataValid = progressData.find(d => d.total_tugas_selesai !== null) || progressData[0];
                     document.getElementById('user-tasks').innerText = dataValid.total_tugas_selesai || 0;
                     document.getElementById('user-points').innerText = dataValid.total_poin || 0;
@@ -80,7 +84,7 @@
                 }
             })
             .catch(err => {
-                console.error("Gagal memuat riwayat:", err);
+                console.error("Gagal memuat riwayat poin:", err);
             });
 
             // 2. Ambil Durasi Lagu
@@ -137,7 +141,7 @@
                 },
                 body: JSON.stringify({ 
                     telegram_id: user,
-                    username: username === 'guest' ? 'eghas_music' : username,
+                    username: username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
                 })
