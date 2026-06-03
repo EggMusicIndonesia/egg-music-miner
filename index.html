@@ -16,7 +16,7 @@
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
-        <p id="status">Menghubungkan ke server...</p>
+        <p id="status">Menghubungkan ke database...</p>
         <button id="btn-play" class="btn-play" onclick="buka()" disabled>Mohon Tunggu...</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
@@ -28,10 +28,9 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        let duration = 30; // Cadangan jika DB offline
+        let duration = 30; 
         let startTime = 0;
 
-        // Ambil durasi asli secara dinamis dari tabel tasks menggunakan REST API langsung
         function ambilDurasi() {
             const url = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
@@ -46,12 +45,12 @@
                 if(data && data.length > 0) {
                     duration = data[0].duration_seconds;
                 }
-                document.getElementById('status').innerText = `Tugas: Tonton lagu ini selama ${duration} detik.`;
+                document.getElementById('status').innerText = `Tugas: Tonton video selama ${duration} detik.`;
                 document.getElementById('btn-play').disabled = false;
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
             })
             .catch(() => {
-                document.getElementById('status').innerText = "Menggunakan durasi standar (30 detik).";
+                document.getElementById('status').innerText = "Gagal memuat durasi asli. Menggunakan waktu standar (30s).";
                 document.getElementById('btn-play').disabled = false;
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
             });
@@ -60,7 +59,7 @@
         ambilDurasi();
 
         function buka() {
-            startTime = Date.now(); // Kunci waktu mulai menonton
+            startTime = Date.now(); 
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
             
             let sisa = duration;
@@ -71,7 +70,7 @@
                 if (sisa <= 0) {
                     clearInterval(timer);
                     document.getElementById('btn-claim').style.display = 'block';
-                    document.getElementById('status').innerText = "Waktu selesai! Silakan klaim poin Anda.";
+                    document.getElementById('status').innerText = "Waktu selesai! Silakan klaim poin.";
                 } else {
                     document.getElementById('status').innerText = `Menambang... Sisa waktu: ${sisa} detik`;
                 }
@@ -79,10 +78,9 @@
         }
 
         function klaim() {
-            // Validasi Anti-Cheat: Hitung apakah waktu tunggu di aplikasi benar-benar valid
             const waktuBerlalu = (Date.now() - startTime) / 1000;
             if (waktuBerlalu < duration) {
-                return tg.showAlert("Jangan curang! Anda harus menonton video sampai selesai.");
+                return tg.showAlert("Jangan curang! Selesaikan tontonan Anda.");
             }
 
             document.getElementById('btn-claim').innerText = "Mengirim...";
@@ -107,9 +105,9 @@
             })
             .then(res => {
                 if (res.ok) {
-                    tg.showAlert("Sukses! Poin berhasil masuk ke database.");
+                    tg.showAlert("Sukses! Poin ditambahkan ke database.");
                 } else {
-                    alert("Gagal menyimpan poin. Hubungi admin.");
+                    alert("Gagal menyimpan poin.");
                 }
             })
             .finally(() => tg.close());
