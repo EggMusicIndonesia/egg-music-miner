@@ -42,28 +42,36 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PENGAMAN HP & DESKTOP: Ambil ID Telegram Anda. Jika terpotong atau bernilai 0, paksa pakai ID Anda murni
-        let user = 7659693582;
+        // PENGAMAN UTAMA: Ambil dari URL parameter bot dahulu, lalu dari SDK Telegram.
+        // Jika keduanya kosong (karena dibuka di browser desktop), kunci ke ID Anda (7659693582) agar poin Anda keluar.
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
-        if (urlUser && urlUser !== '0' && urlUser !== 0 && !isNaN(urlUser)) {
-            user = parseInt(urlUser);
-        }
+        const user = (urlUser && urlUser !== '0' && urlUser !== 0) ? parseInt(urlUser) : 7659693582;
         
         const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
         const username = String(rawUsername).toLowerCase();
 
         document.getElementById('user-name').innerText = username;
 
+        const headers = {
+            'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
+            'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
+        };
+
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
-            const headers = {
-                'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-                'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
-            };
+            // 1. Ambil Riwayat Poin
+            fetch(urlProgress, { headers })
+            .then(res => res.json())
+            .then(progressData => {
+                const totalTugas = progressData ? progressData.length : 0;
+                document.getElementById('user-tasks').innerText = totalTugas;
+                document.getElementById('user-points').innerText = totalTugas * 100;
+            })
+            .catch(err => console.error("Gagal memuat riwayat:", err));
 
-            // Ambil Data Durasi Tugas
+            // 2. Ambil Durasi Lagu
             fetch(urlDurasi, { headers })
             .then(res => res.json())
             .then(data => {
@@ -79,16 +87,6 @@
             .catch(() => {
                 document.getElementById('status').innerText = "Gagal memuat durasi tugas.";
             });
-
-            // Ambil Data Riwayat Saldo Poin
-            fetch(urlProgress, { headers })
-            .then(res => res.json())
-            .then(progressData => {
-                const totalTugas = progressData ? progressData.length : 0;
-                document.getElementById('user-tasks').innerText = totalTugas;
-                document.getElementById('user-points').innerText = totalTugas * 100;
-            })
-            .catch(() => console.log("Gagal memuat history poin"));
         }
         
         initAplikasi();
@@ -124,8 +122,7 @@
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-                    'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
+                    ...headers,
                     'Content-Type': 'application/json',
                     'Prefer': 'return=minimal'
                 },
@@ -139,11 +136,10 @@
             .then(res => {
                 if (res.ok) {
                     tg.showAlert("Sukses! 100 Poin ditambahkan.");
-                    setTimeout(() => {
-                        tg.close();
-                    }, 500);
+                    initAplikasi(); // Muat ulang poin di layar setelah sukses klaim
+                    document.getElementById('btn-claim').style.display = 'none';
                 } else {
-                    alert("Gagal menyimpan poin.");
+                    alert("Gagal menyimpan poin ke database.");
                 }
             })
             .catch(() => {
