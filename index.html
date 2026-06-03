@@ -42,7 +42,7 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Mengambil data parameter URL dari bot atau fallback ke data profil Anda
+        // Membaca data parameter URL dari bot atau fallback ke data profil Anda
         const telegramIdFromBot = params.get('telegram_id');
         const user = telegramIdFromBot && telegramIdFromBot !== '0' ? telegramIdFromBot : (tg.initDataUnsafe?.user?.id || 7659693582);
         const username = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music'; 
