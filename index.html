@@ -42,16 +42,16 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Ambil data user langsung dari Telegram SDK
-        const user = tg.initDataUnsafe?.user?.id || 7659693582; 
-        const username = tg.initDataUnsafe?.user?.username || 'eghas_music'; 
+        // Membaca ID murni dari Telegram SDK atau link cadangan
+        const user = tg.initDataUnsafe?.user?.id || params.get('telegram_id') || 7659693582; 
+        const username = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music'; 
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             
-            // Mencari history tugas berdasarkan ID Telegram yang tipenya sudah sinkron (BigInt)
+            // Pencarian riwayat tugas menggunakan telegram_id (yang sekarang bertipe angka/BigInt di database)
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
             const headers = {
