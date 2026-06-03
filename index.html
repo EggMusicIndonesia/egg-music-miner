@@ -41,32 +41,36 @@
         
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
+        
+        // Ambil data Telegram asli
         const user = tg.initDataUnsafe?.user?.id || 0;
-        const username = tg.initDataUnsafe?.user?.username || 'guest';
+        const username = tg.initDataUnsafe?.user?.username || 'eghas_music'; // Fallback otomatis ke eghas_music untuk testing
         
         let duration = 30; 
         let startTime = 0;
 
-        // Tampilkan username Telegram di UI
         document.getElementById('user-name').innerText = username;
 
-        // Ambil data Tugas sekaligus menghitung poin akumulasi user
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
+            
+            // Perbaikan Query: Jika user ID valid (!= 0) cari pakai ID, jika tidak cari berdasarkan Username
+            const urlProgress = user !== 0 
+                ? `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`
+                : `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?username=eq.${username}&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
                 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
             };
 
-            // Ambil total history tugas yang pernah dikerjakan user ini
+            // Ambil total history tugas dari database
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
                 const totalTugas = progressData ? progressData.length : 0;
                 document.getElementById('user-tasks').innerText = totalTugas;
-                document.getElementById('user-points').innerText = totalTugas * 100; // Kalkulasi: 1 tugas = 100 Poin
+                document.getElementById('user-points').innerText = totalTugas * 100;
             })
             .catch(() => console.log("Gagal memuat history poin"));
 
