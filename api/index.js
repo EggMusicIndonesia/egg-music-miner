@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 
-// Token baru Anda sudah dimasukkan di sini
+// Token aktif Anda
 const bot = new Telegraf('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
@@ -17,9 +17,12 @@ bot.command('tugas', async (ctx) => {
             return ctx.reply("Gagal mengambil data dari database atau data kosong.");
         }
 
+        // PERBAIKAN: Menyisipkan parameter telegram_id dan username langsung ke URL Web App tombol
         const keyboard = data.map(song => [{
             text: `▶️ Buka Music Miner (ID: ${song.song_id})`,
-            web_app: { url: `https://project-g1fby.vercel.app/?song_id=${song.song_id}` }
+            web_app: { 
+                url: `https://project-g1fby.vercel.app/?song_id=${song.song_id}&telegram_id=${ctx.from.id}&username=${ctx.from.username || 'guest'}` 
+            }
         }]);
 
         return ctx.reply("Klik tombol di bawah untuk mulai menambang:", {
