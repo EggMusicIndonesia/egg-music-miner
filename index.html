@@ -19,7 +19,6 @@
 <body>
     <div class="card">
         <h2>Egg Music Miner 🥚</h2>
-        
         <div class="user-info">
             <div class="user-detail">
                 <span>👤 <strong id="user-name">Loading...</strong></span>
@@ -29,8 +28,7 @@
                 💰 <span id="user-points">0</span> <span style="font-size: 12px; color: #2ecc71;">Poin</span>
             </div>
         </div>
-
-        <p id="status">Menghubungkan ke database...</p>
+        <p id="status">Menghubungkan...</p>
         <button id="btn-play" class="btn-play" onclick="buka()" disabled>Mohon Tunggu...</button>
         <button id="btn-claim" class="btn-claim" onclick="klaim()">💰 KLAIM POIN</button>
     </div>
@@ -38,65 +36,32 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // 1. Ambil Parameter Telegram ID secara aman
-        const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
-        let user = 7659693582; 
-        if (urlUser && urlUser !== '0' && urlUser !== 0 && urlUser !== 'null' && urlUser !== 'undefined') {
-            user = parseInt(urlUser);
-        }
-        
-        // 2. Ambil Parameter Username. Jika terpotong atau bernilai 'guest', paksa kunci ke 'eghas_music' sebagai pemilik utama
-        const urlUsername = params.get('username') || tg.initDataUnsafe?.user?.username;
-        let username = 'eghas_music';
-        if (urlUsername && urlUsername !== 'guest' && urlUsername !== 'null' && urlUsername !== 'undefined') {
-            username = String(urlUsername).toLowerCase();
-        }
+        // PENGUNCI ID & USERNAME: Prioritaskan ID 7659693582 jika data URL rusak
+        const userId = parseInt(params.get('telegram_id') || tg.initDataUnsafe?.user?.id || 7659693582);
+        const username = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
 
         document.getElementById('user-name').innerText = username;
 
-        const headers = {
-            'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
-            'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'
-        };
+        const headers = {'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o', 'Authorization': 'Bearer sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o'};
 
         function initAplikasi() {
-            const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            
-            // Logika Fleksibel: Cari berdasarkan username murni agar data 18 tugas Anda terbaca dengan sempurna
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?username=eq.${username}`;
-            
-            // 1. Ambil Saldo Poin dari View laporan_airdrop
-            fetch(urlProgress, { headers })
-            .then(res => res.json())
-            .then(progressData => {
-                if (Array.isArray(progressData) && progressData.length > 0) {
-                    // Cari baris data yang total_tugas_selesai miliknya tidak kosong (bukan NULL)
-                    const dataValid = progressData.find(d => d.total_tugas_selesai !== null) || progressData[0];
-                    document.getElementById('user-tasks').innerText = dataValid.total_tugas_selesai || 0;
-                    document.getElementById('user-points').innerText = dataValid.total_poin || 0;
-                } else {
-                    document.getElementById('user-tasks').innerText = "0";
-                    document.getElementById('user-points').innerText = "0";
-                }
-            })
-            .catch(err => {
-                console.error("Gagal memuat riwayat poin:", err);
-            });
-
-            // 2. Ambil Durasi Lagu
-            fetch(urlDurasi, { headers })
+            // Mengambil langsung dari tabel laporan_airdrop berdasarkan telegram_id
+            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${userId}`, { headers })
             .then(res => res.json())
             .then(data => {
-                let duration = 30;
-                if(data && data.length > 0) {
-                    duration = data[0].duration_seconds;
-                }
-                window.duration = duration;
-                document.getElementById('status').innerText = `Tugas: Tonton video selama ${duration} detik.`;
+                const userAkun = data.find(item => item.total_tugas_selesai !== null) || data[0] || {};
+                document.getElementById('user-tasks').innerText = userAkun.total_tugas_selesai || 0;
+                document.getElementById('user-points').innerText = userAkun.total_poin || 0;
+            });
+
+            fetch(`https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`, { headers })
+            .then(res => res.json())
+            .then(data => {
+                window.duration = data[0]?.duration_seconds || 30;
+                document.getElementById('status').innerText = `Tugas: Tonton ${window.duration} detik.`;
                 document.getElementById('btn-play').disabled = false;
                 document.getElementById('btn-play').innerText = "▶️ NONTON LAGU";
             });
@@ -105,58 +70,31 @@
         initAplikasi();
 
         function buka() {
-            window.startTime = Date.now(); 
+            window.startTime = Date.now();
             tg.openLink('https://www.youtube.com/watch?v=' + songId);
-            
-            let sisa = window.duration;
             document.getElementById('btn-play').style.display = 'none';
-            
+            let sisa = window.duration;
             window.timer = setInterval(() => {
                 sisa--;
                 if (sisa <= 0) {
                     clearInterval(window.timer);
                     document.getElementById('btn-claim').style.display = 'block';
-                    document.getElementById('status').innerText = "Waktu selesai! Silakan klaim poin.";
+                    document.getElementById('status').innerText = "Waktu selesai! Klaim poin.";
                 } else {
-                    document.getElementById('status').innerText = `Menambang... Sisa waktu: ${sisa} detik`;
+                    document.getElementById('status').innerText = `Sisa waktu: ${sisa} detik`;
                 }
             }, 1000);
         }
 
         function klaim() {
-            const waktuBerlalu = (Date.now() - window.startTime) / 1000;
-            if (waktuBerlalu < window.duration) {
-                return tg.showAlert("Jangan curang! Selesaikan tontonan Anda.");
-            }
-
-            document.getElementById('btn-claim').innerText = "Mengirim...";
-            const url = 'https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress';
-
-            fetch(url, {
+            fetch('https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress', {
                 method: 'POST',
-                headers: {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify({ 
-                    telegram_id: user,
-                    username: username,
-                    song_id: songId,
-                    completed_at: new Date().toISOString()
-                })
-            })
-            .then(res => {
-                if (res.ok) {
-                    tg.showAlert("Sukses! 100 Poin ditambahkan.");
-                    setTimeout(() => { initAplikasi(); }, 1000);
-                    document.getElementById('btn-claim').style.display = 'none';
-                } else {
-                    alert("Gagal menyimpan poin.");
-                }
-            })
-            .catch(() => {
-                alert("Terjadi gangguan jaringan ke database.");
+                headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ telegram_id: userId, username: username, song_id: songId, completed_at: new Date().toISOString() })
+            }).then(() => {
+                tg.showAlert("Sukses! 100 Poin ditambahkan.");
+                setTimeout(initAplikasi, 1000);
+                document.getElementById('btn-claim').style.display = 'none';
             });
         }
     </script>
