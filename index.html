@@ -42,16 +42,18 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Membaca ID murni dari URL parameter atau fallback ke ID Telegram Anda
+        // Membaca ID & Username secara aman
         const userUrl = params.get('telegram_id');
-        const user = userUrl && userUrl !== '0' ? parseInt(userUrl) : (tg.initDataUnsafe?.user?.id || 7659693582);
+        const user = userUrl && userUrl !== '0' ? userUrl : (tg.initDataUnsafe?.user?.id || '7659693582');
         const username = tg.initDataUnsafe?.user?.username || params.get('username') || 'eghas_music'; 
 
         document.getElementById('user-name').innerText = username;
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
+            
+            // SOLUSI SINKRONISASI: Cari menggunakan or() sehingga jika pencarian via ID gagal, ia otomatis mencocokkan via nama username Anda!
+            const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?or=(telegram_id.eq.${user},username.eq.${username})&select=id`;
             
             const headers = {
                 'apikey': 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o',
@@ -126,7 +128,6 @@
             })
             .then(res => {
                 if (res.ok) {
-                    // PENGATURAN TUTUP OTOMATIS: Memberi alert sukses lalu paksa tutup WebApp secara instant
                     tg.showAlert("Sukses! 100 Poin ditambahkan.");
                     setTimeout(() => {
                         tg.close();
