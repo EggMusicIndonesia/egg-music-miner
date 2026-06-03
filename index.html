@@ -42,8 +42,7 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // PENGAMAN UTAMA: Ambil dari URL parameter bot dahulu, lalu dari SDK Telegram.
-        // Jika keduanya kosong (karena dibuka di browser desktop), kunci ke ID Anda (7659693582) agar poin Anda keluar.
+        // Ambil ID secara aman dari URL parameter bot atau SDK Telegram
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
         const user = (urlUser && urlUser !== '0' && urlUser !== 0) ? parseInt(urlUser) : 7659693582;
         
@@ -61,15 +60,19 @@
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/user_progress?telegram_id=eq.${user}&select=id`;
             
-            // 1. Ambil Riwayat Poin
+            // 1. Ambil Riwayat Poin (Pastikan hasil respon berupa Array valid)
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
-                const totalTugas = progressData ? progressData.length : 0;
+                // Tambahkan validasi Array.isArray untuk mencegah error pembacaan data .length
+                const totalTugas = Array.isArray(progressData) ? progressData.length : 0;
                 document.getElementById('user-tasks').innerText = totalTugas;
                 document.getElementById('user-points').innerText = totalTugas * 100;
             })
-            .catch(err => console.error("Gagal memuat riwayat:", err));
+            .catch(err => {
+                console.error("Gagal memuat riwayat:", err);
+                document.getElementById('user-tasks').innerText = "0";
+            });
 
             // 2. Ambil Durasi Lagu
             fetch(urlDurasi, { headers })
@@ -136,10 +139,10 @@
             .then(res => {
                 if (res.ok) {
                     tg.showAlert("Sukses! 100 Poin ditambahkan.");
-                    initAplikasi(); // Muat ulang poin di layar setelah sukses klaim
+                    initAplikasi(); // Perbarui skor di layar secara langsung
                     document.getElementById('btn-claim').style.display = 'none';
                 } else {
-                    alert("Gagal menyimpan poin ke database.");
+                    alert("Gagal menyimpan poin ke database. Periksa aturan RLS Supabase Anda.");
                 }
             })
             .catch(() => {
