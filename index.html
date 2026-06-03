@@ -42,9 +42,9 @@
         const params = new URLSearchParams(window.location.search);
         const songId = params.get('song_id') || 'oO6ZfaIMhog';
         
-        // Perbaikan pembacaan ID: Jika Telegram memotong URL, langsung arahkan ke nomor ID Anda yang valid
+        // PERBAIKAN TIPE DATA: Paksa menjadi Angka Murni (Integer) agar sinkron dengan tipe int8 di database Supabase
         const urlUser = params.get('telegram_id') || tg.initDataUnsafe?.user?.id;
-        const user = (urlUser && urlUser !== '0' && urlUser !== 0 && urlUser !== 'null') ? String(urlUser) : '7659693582';
+        const user = (urlUser && urlUser !== '0' && urlUser !== 0 && urlUser !== 'null') ? parseInt(urlUser) : 7659693582;
         
         const rawUsername = params.get('username') || tg.initDataUnsafe?.user?.username || 'eghas_music';
         const username = String(rawUsername).toLowerCase();
@@ -58,16 +58,13 @@
 
         function initAplikasi() {
             const urlDurasi = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/tasks?song_id=eq.${songId}&select=duration_seconds`;
-            
-            // Kueri pengambilan data yang disesuaikan dengan tipe data view di Supabase Anda
             const urlProgress = `https://tawqbyyzckcdmdluhxis.supabase.co/rest/v1/laporan_airdrop?telegram_id=eq.${user}&select=total_tugas_selesai,total_poin`;
             
-            // 1. Ambil Saldo Langsung dari laporan_airdrop
+            // 1. Ambil Saldo Langsung dari view laporan_airdrop
             fetch(urlProgress, { headers })
             .then(res => res.json())
             .then(progressData => {
                 if (Array.isArray(progressData) && progressData.length > 0) {
-                    // Sinkronisasi data ke elemen teks di layar aplikasi Anda
                     document.getElementById('user-tasks').innerText = progressData[0].total_tugas_selesai !== null ? progressData[0].total_tugas_selesai : 0;
                     document.getElementById('user-points').innerText = progressData[0].total_poin !== null ? progressData[0].total_poin : 0;
                 } else {
@@ -132,7 +129,7 @@
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({ 
-                    telegram_id: parseInt(user),
+                    telegram_id: user,
                     username: username,
                     song_id: songId,
                     completed_at: new Date().toISOString()
