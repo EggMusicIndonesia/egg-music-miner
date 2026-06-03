@@ -5,11 +5,10 @@ const bot = new Bot('8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
 const supabase = createClient('https://tawqbyyzckcdmdluhxis.supabase.co', 'sb_publishable_bRnN4OTn2ToANaPAiOiDpA__oFt8X9o');
 
 bot.command('tugas', async (ctx) => {
-    // 1. Pastikan ID dikonversi ke String
+    // Pastikan userId selalu berupa string untuk perbandingan database
     const userId = String(ctx.from.id);
-    console.log("Mencari data untuk user:", userId);
-
-    // 2. Ambil data laporan dengan handling error
+    
+    // Ambil data laporan
     const { data: laporan, error } = await supabase
         .from('laporan_airdrop')
         .select('total_tugas_selesai, total_poin')
@@ -18,14 +17,14 @@ bot.command('tugas', async (ctx) => {
 
     if (error) console.error("Error Supabase:", error);
 
-    // 3. Ambil daftar tugas dan filter
+    // Ambil daftar tugas dan progress
     const { data: semuaTugas } = await supabase.from('tasks').select('song_id, title');
     const { data: progress } = await supabase.from('user_progress').select('song_id').eq('telegram_id', userId);
     
     const selesaiIds = progress ? progress.map(p => p.song_id) : [];
     const sisaTugas = semuaTugas ? semuaTugas.filter(t => !selesaiIds.includes(t.song_id)) : [];
 
-    // 4. Output ke Telegram
+    // Output pesan
     let message = `📊 *Status Progres Anda*\n`;
     message += `Tugas Selesai: ${laporan ? laporan.total_tugas_selesai : 0}\n`;
     message += `Total Poin: ${laporan ? laporan.total_poin : 0} pts\n\n`;
