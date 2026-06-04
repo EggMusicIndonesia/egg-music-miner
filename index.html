@@ -29,12 +29,12 @@
             status.innerText = "Menghubungkan...";
 
             try {
-                // Menggunakan URL lengkap Vercel Anda agar tidak error 404
-                const res = await fetch('/api', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegram_id: 7659693582, task_id: 1 })
-                });
+                // Ganti baris 38 di index.html menjadi:
+const res = await fetch('https://project-g1fby.vercel.app/api/index', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ telegram_id: 7659693582, task_id: 1 })
+});
 
                 if (res.ok) {
                     status.innerText = "Berhasil! Mendengarkan...";
