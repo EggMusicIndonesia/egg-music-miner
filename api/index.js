@@ -22,7 +22,18 @@ module.exports = async (req, res) => {
     
     // Logic dasar untuk menerima klik dari Web App
     if (req.method === 'POST') {
-        // Ambil ID video dari tabel 'music_tasks' dengan id = 1
-        const { data } = await supabase.from('music_tasks').select('stream_link').eq('id', 1).single();
-        return res.status(200).json({ stream_link: data ? data.stream_link : "dQw4w9WgXcQ" });
-}
+        const { telegram_id } = req.body;
+        
+        // 1. Ambil ID video
+        const { data: task } = await supabase.from('music_tasks').select('stream_link').eq('id', 1).single();
+        
+        // 2. Tambah poin ke database
+        const { data: user } = await supabase.from('user_progress').select('points').eq('telegram_id', telegram_id).single();
+        if (user) {
+            await supabase.from('user_progress').update({ points: user.points + 10 }).eq('telegram_id', telegram_id);
+        } else {
+            await supabase.from('user_progress').insert([{ telegram_id, points: 10 }]);
+        }
+
+        return res.status(200).json({ stream_link: task ? task.stream_link : "dQw4w9WgXcQ" });
+    }
