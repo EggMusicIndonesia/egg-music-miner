@@ -1,5 +1,5 @@
 const { Telegraf } = require('telegraf');
-const { createClient } = require('@supabase/supabase-supabase');
+const { createClient } = require('@supabase/supabase-js');
 
 // 1. INISIALISASI TELEGRAF BOT & SUPABASE
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
