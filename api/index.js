@@ -67,9 +67,9 @@ module.exports = async (req, res) => {
     if (req.method === 'POST' && path === 'start-task') {
         const { telegram_id, task_id } = req.body;
         
-        // Konversi paksa ke angka murni agar Supabase int8 tidak menolak
-        const cleanTelegramId = parseInt(telegram_id, 10);
-        const cleanTaskId = parseInt(task_id, 10);
+        // Jika teks kosong, berikan angka default agar tidak memicu crash NaN di Supabase
+        const cleanTelegramId = parseInt(telegram_id, 10) || 0;
+        const cleanTaskId = parseInt(task_id, 10) || 0;
 
         const { data: existingLog } = await supabase.from('worker_logs').select('*').eq('telegram_id', cleanTelegramId).eq('task_id', cleanTaskId).maybeSingle();
 
