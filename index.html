@@ -1,52 +1,25 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { background: #0b0e14; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
-        #player-container { display: none; margin-top: 20px; }
-        #action-btn { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #ff9500; border: none; border-radius: 10px; color: white; }
-    </style>
-</head>
-<body>
-    <div id="status">Siap mining?</div>
-    <div id="player-container">
-        <iframe id="yt-player" width="100%" height="200" src="" frameborder="0" allow="autoplay"></iframe>
-        <div id="timer">Durasi: 30 detik</div>
-    </div>
-    <button id="action-btn" onclick="startMining()">MULAI TONTON</button>
+const { Telegraf } = require('telegraf');
+const { createClient } = require('@supabase/supabase-js');
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        async function startMining() {
-            const btn = document.getElementById('action-btn');
-            const status = document.getElementById('status');
-            const container = document.getElementById('player-container');
-            
-            btn.style.display = 'none';
-            status.innerText = "Menyiapkan tugas...";
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-            const res = await fetch('/api', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegram_id: tg.initDataUnsafe?.user?.id || 7659693582, task_id: 1 })
-            });
-            const data = await res.json();
+module.exports = async (req, res) => {
+    if (req.body && req.body.update_id) return bot.handleUpdate(req.body, res);
 
-            document.getElementById('yt-player').src = "https://www.youtube.com/embed/" + data.stream_link + "?autoplay=1";
-            container.style.display = 'block';
+    if (req.method === 'POST') {
+        const { telegram_id } = req.body;
 
-            let count = 30;
-            const timer = setInterval(() => {
-                count--;
-                document.getElementById('timer').innerText = "Sisa waktu: " + count + " detik";
-                if (count <= 0) {
-                    clearInterval(timer);
-                    status.innerText = "Mining Selesai! Poin ditambahkan.";
-                }
-            }, 1000);
+        // 1. Tambah Poin
+        const { data: user } = await supabase.from('user_progress').select('points').eq('telegram_id', telegram_id).single();
+        if (user) {
+            await supabase.from('user_progress').update({ points: user.points + 10 }).eq('telegram_id', telegram_id);
+        } else {
+            await supabase.from('user_progress').insert([{ telegram_id, points: 10 }]);
         }
-    </script>
-</body>
-</html>
+
+        // 2. Ambil Link Video
+        const { data: task } = await supabase.from('music_tasks').select('stream_link').eq('id', 1).single();
+        return res.status(200).json({ stream_link: task ? task.stream_link : "dQw4w9WgXcQ" });
+    }
+};
