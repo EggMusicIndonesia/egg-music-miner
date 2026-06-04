@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
     }
     
     // Logic dasar untuk menerima klik dari Web App
-    f (req.method === 'POST') {
+    if (req.method === 'POST') {
         // Ambil ID video dari tabel 'music_tasks' dengan id = 1
         const { data } = await supabase.from('music_tasks').select('stream_link').eq('id', 1).single();
         return res.status(200).json({ stream_link: data ? data.stream_link : "dQw4w9WgXcQ" });
