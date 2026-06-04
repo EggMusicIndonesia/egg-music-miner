@@ -1,97 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Egg Music Miner App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding: 20px; }
-        .btn-mining { padding: 15px 30px; background: green; color: white; border: none; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 8px; }
-        .btn-disabled { background: #555; cursor: not-allowed; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0e14;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #151a24;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        iframe {
+            width: 100%;
+            height: 200px;
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255,152,0,0.4);
+            transition: all 0.3s ease;
+            width: 80%;
+            margin: 10px auto;
+            display: block;
+        }
+        .btn:disabled {
+            background: #3a4454;
+            color: #8a99ad;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #ffb74d;
+        }
     </style>
 </head>
 <body>
 
-    <div id="player"></div>
-    <h3 id="timer">Siap untuk mining koin musik?</h3>
-    <button id="btn" class="btn-mining" onclick="mulaiMining()">MULAI TONTON</button>
+<div class="container">
+    <div id="player-container"></div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
+    <h3 id="info-title">Siap untuk mining koin musik?</h3>
+    
+    <button id="action-btn" class="btn" onclick="startTask()">MULAI TONTON</button>
+    <div id="status">Klik tombol di atas untuk mengunci waktu mining.</div>
+</div>
 
-        // Mengambil data dari URL parameter yang dikirim oleh Bot Telegram
-        const params = new URLSearchParams(window.location.search);
-        const telegram_id = params.get('telegram_id');
-        const task_id = params.get('task_id') || "1"; 
-        const song_id = params.get('song_id');
-        // Ambil data durasi asli dari database (default ke 30 detik jika tidak terkirim)
-        const duration = parseInt(params.get('duration')) || 30; 
+<script>
+    // 1. Ambil Parameter dari URL Bot Telegram
+    const urlParams = new URLSearchParams(window.location.search);
+    const telegramId = urlParams.get('telegram_id');
+    const taskId = urlParams.get('task_id');
+    const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
+    const duration = parseInt(urlParams.get('duration') || '30', 10);
 
-        // Memasang Embed Player YouTube
-        document.getElementById('player').innerHTML = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${song_id}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    // Tempel Video YouTube secara otomatis sesuai instruksi database
+    document.getElementById('player-container').innerHTML = `
+        <iframe src="https://www.youtube.com/embed/${songId}?enablejsapi=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    `;
 
-        async function mulaiMining() {
-            const btn = document.getElementById('btn');
-            btn.disabled = true;
-            btn.className = "btn-mining btn-disabled";
-            btn.innerText = "Mengunci Waktu...";
+    // 2. Fungsi Mengunci Waktu (Mulai Tugas)
+    async function startTask() {
+        const btn = document.getElementById('action-btn');
+        const statusDiv = document.getElementById('status');
+        
+        btn.disabled = true;
+        btn.innerText = "Mengunci Waktu...";
+        statusDiv.innerText = "Menghubungkan ke server secure Vercel...";
 
-            try {
-                // 1. LAPOR KE BACKEND KALAU WORKER BARU MULAI (ANTI-CHEAT START)
-                const responStart = await fetch(`/api?path=start-task`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram_id: parseInt(telegram_id), task_id: parseInt(task_id) })
-                });
+        try {
+            const response = await fetch('/api?path=start-task', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
+            });
+            
+            const result = await response.json();
 
-                const dataStart = await responStart.json();
-
-                if (!responStart.ok) {
-                    alert(dataStart.message || "Gagal memulai tugas.");
-                    btn.disabled = false;
-                    btn.className = "btn-mining";
-                    btn.innerText = "MULAI TONTON";
-                    return;
-                }
-
-                // 2. JALANKAN TIMER VISUAL SESUAI DURASI ASLI LAGU DI DATABASE
-                let sisaWaktu = duration; 
-                btn.style.display = 'none';
+            if (response.ok) {
+                statusDiv.innerText = "Waktu terkunci! Musik sedang didengarkan...";
+                let waktuTersisa = duration;
                 
-                let hitungMundur = setInterval(async () => {
-                    sisaWaktu--;
-                    document.getElementById('timer').innerText = `Mining sisa: ${sisaWaktu} detik`;
-
-                    if (sisaWaktu <= 0) {
-                        clearInterval(hitungMundur);
-                        document.getElementById('timer').innerText = "Memverifikasi durasi menonton...";
-
-                        // 3. TIMER SELESAI, KLAIM POIN KE SERVER (VERIFIKASI REAL-TIME)
-                        const responClaim = await fetch(`/api?path=claim-points`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ telegram_id: parseInt(telegram_id), task_id: parseInt(task_id) })
-                        });
-
-                        const dataClaim = await responClaim.json();
-
-                        if (responClaim.ok) {
-                            alert("Sukses! Tugas selesai dan poin aman masuk ke saldo kamu.");
-                        } else {
-                            alert(`Gagal: ${dataClaim.message}`);
-                        }
-                        
-                        tg.close(); // Tutup Mini App otomatis setelah selesai
+                // Mulai Hitung Mundur Visual
+                const countdown = setInterval(() => {
+                    waktuTersisa--;
+                    btn.innerText = `SISA WAKTU: ${waktuTersisa}s`;
+                    
+                    if (waktuTersisa <= 0) {
+                        clearInterval(countdown);
+                        btn.disabled = false;
+                        btn.innerText = "KLAIM EGG POINTS";
+                        btn.setAttribute("onclick", "claimPoints()");
+                        statusDiv.innerText = "Waktu selesai! Silakan klaim poin Anda sekarang.";
                     }
                 }, 1000);
-
-            } catch (error) {
-                alert("Terjadi kesalahan jaringan/server.");
+            } else {
                 btn.disabled = false;
-                btn.className = "btn-mining";
                 btn.innerText = "MULAI TONTON";
+                statusDiv.innerText = "Gagal: " + (result.message || "Respons server bermasalah");
             }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerText = "MULAI TONTON";
+            statusDiv.innerText = "Eror Koneksi: Pastikan jaringan Anda stabil.";
+            console.error(err);
         }
-    </script>
+    }
+
+    // 3. Fungsi Klaim Poin Musik
+    async function claimPoints() {
+        const btn = document.getElementById('action-btn');
+        const statusDiv = document.getElementById('status');
+        
+        btn.disabled = true;
+        btn.innerText = "Memproses Klaim...";
+
+        try {
+            const response = await fetch('/api?path=claim-points', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
+            });
+            
+            const result = await response.json();
+
+            if (response.ok) {
+                statusDiv.style.color = "#4caf50";
+                statusDiv.innerText = `🎉 ${result.message}`;
+                btn.innerText = "SUKSES DIKLAIM ✔";
+                
+                // Beritahu Telegram WebApp untuk menutup aplikasi secara otomatis dalam 2 detik
+                setTimeout(() => {
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.close();
+                    }
+                }, 2000);
+            } else {
+                btn.disabled = false;
+                btn.innerText = "KLAIM EGG POINTS";
+                statusDiv.innerText = "Gagal Klaim: " + result.message;
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerText = "KLAIM EGG POINTS";
+            statusDiv.innerText = "Eror sistem saat mengklaim poin.";
+        }
+    }
+</script>
 </body>
 </html>
