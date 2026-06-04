@@ -1,11 +1,4 @@
-{
-  "name": "egg-music-miner",
-  "version": "1.0.0",
-  "description": "Telegram Mini App Music Miner dengan Sistem Anti-Cheat dan Supabase",
-  "main": "api/index.js",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "dotenv": "^16.4.5",
-    "telegraf": "^4.16.3"
-  }
+"dependencies": {
+  "telegraf": "^4.16.3",
+  "@supabase/supabase-js": "^2.39.0"
 }
