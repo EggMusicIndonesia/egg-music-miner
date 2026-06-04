@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 // 1. INISIALISASI TELEGRAF BOT & SUPABASE
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '8883262227:AAHhDLF-qHadlEm-7CKYzDVtXsiI1Ln74WA');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const webAppUrl = 'https://project-g1fby.vercel.app';
 
