@@ -141,3 +141,5 @@ module.exports = async (req, res) => {
 
     return res.status(200).json({ status: "ready", message: "Server API & Bot Egg Music berjalan seimbang!" });
 };
+    
+        // Tes pemicu deployment baru
