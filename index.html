@@ -91,7 +91,7 @@
         statusDiv.innerText = "Menghubungkan ke server secure Vercel...";
 
         try {
-            const response = await fetch('/api?path=start-task', {
+            const response = await fetch('/api/index.js?path=start-task', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
@@ -138,7 +138,7 @@
         btn.innerText = "Memproses Klaim...";
 
         try {
-            const response = await fetch('/api?path=claim-points', {
+            const response = await fetch('/api/index.js?path=claim-points', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
