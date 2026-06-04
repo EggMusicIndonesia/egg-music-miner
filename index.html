@@ -69,10 +69,18 @@
 </div>
 
 <script>
-    // 1. Ambil Parameter dari URL Bot Telegram
+    // Ambil SDK Telegram WebApp
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+    }
+
+    // Ambil ID user langsung dari sistem Telegram (Aman dari URL hilang)
+    const telegramId = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
+    
     const urlParams = new URLSearchParams(window.location.search);
-    const telegramId = urlParams.get('telegram_id');
-    const taskId = urlParams.get('task_id');
+    const taskId = urlParams.get('task_id') || '1';
     const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
     const duration = parseInt(urlParams.get('duration') || '30', 10);
 
