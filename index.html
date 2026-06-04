@@ -31,7 +31,7 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch('https://project-g1fby.vercel.app/api/index.js?path=start-task', {
+                const res = await fetch('/api/index', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
