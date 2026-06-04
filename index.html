@@ -2,173 +2,53 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Egg Music Miner App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0b0e14;
-            color: #ffffff;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-        }
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: #151a24;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        }
-        iframe {
-            width: 100%;
-            height: 200px;
-            border: none;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .btn {
-            background: linear-gradient(135deg, #ff9800, #ff5722);
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255,152,0,0.4);
-            transition: all 0.3s ease;
-            width: 80%;
-            margin: 10px auto;
-            display: block;
-        }
-        .btn:disabled {
-            background: #3a4454;
-            color: #8a99ad;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        #status {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #ffb74d;
-        }
+        body { background: #0b0e14; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #ff9500; border: none; border-radius: 10px; color: white; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="player-container"></div>
-        <h3 id="info-title">Siap untuk mining koin musik?</h3>
-        <button id="action-btn" class="btn" onclick="startTask()">MULAI TONTON</button>
-        <div id="status">Klik tombol di atas untuk mengunci waktu mining.</div>
-    </div>
+    <div id="status" style="margin-bottom:20px;">Siap untuk mining koin musik?</div>
+    
+    <audio id="music-player" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+    <button id="action-btn" onclick="startTask()">MULAI TONTON</button>
 
     <script>
-        // 1. Inisialisasi SDK Telegram WebApp
-        const tg = window.Telegram ? window.Telegram.WebApp : null;
-        if (tg) {
-            tg.ready();
-            tg.expand();
-        }
-
-        // Ambil ID user langsung dari sistem Telegram. Jika gagal, gunakan ID Anda sebagai backup aman.
-        const telegramId = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 7659693582;
+        const tg = window.Telegram.WebApp;
+        tg.ready();
         
-        const urlParams = new URLSearchParams(window.location.search);
-        const taskId = urlParams.get('task_id') || '1';
-        const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
-        const duration = parseInt(urlParams.get('duration') || '30', 10);
+        const telegramId = tg.initDataUnsafe?.user?.id || 7659693582;
+        const taskId = 1; // Sesuaikan dengan ID lagu di Supabase Anda
 
-        // Tempel Video YouTube secara otomatis
-        document.getElementById('player-container').innerHTML = `
-            <iframe src="https://www.youtube.com/embed/${songId}?enablejsapi=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        `;
-
-        // 2. Fungsi Mengunci Waktu (Mulai Tugas)
         async function startTask() {
             const btn = document.getElementById('action-btn');
-            const statusDiv = document.getElementById('status');
+            const status = document.getElementById('status');
+            const player = document.getElementById('music-player');
+
+            status.innerText = "Menghubungkan ke server...";
             btn.disabled = true;
-            btn.innerText = "Mengunci Waktu...";
-            statusDiv.innerText = "Menghubungkan ke server secure Vercel...";
 
             try {
-                const response = await fetch('/api/index.js?path=start-task', {
+                const res = await fetch('https://project-g1fby.vercel.app/api/index.js?path=start-task', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
                 });
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    statusDiv.innerText = "Waktu terkunci! Musik sedang didengarkan...";
-                    let waktuTersisa = duration;
-
-                    // Mulai Hitung Mundur Visual
-                    const countdown = setInterval(() => {
-                        waktuTersisa--;
-                        btn.innerText = `SISA WAKTU: ${waktuTersisa}s`;
-
-                        if (waktuTersisa <= 0) {
-                            clearInterval(countdown);
-                            btn.disabled = false;
-                            btn.innerText = "KLAIM EGG POINTS";
-                            btn.setAttribute("onclick", "claimPoints()");
-                            statusDiv.innerText = "Waktu selesai! Silakan klaim poin Anda sekarang.";
-                        }
-                    }, 1000);
+                if (res.ok) {
+                    status.innerText = "Lagu dimulai! Mendengarkan...";
+                    player.play(); // Memicu pemutaran lagu otomatis
+                    btn.innerText = "Sedang Mendengarkan...";
                 } else {
+                    const err = await res.json();
+                    status.innerText = "Eror: " + err.message;
                     btn.disabled = false;
-                    btn.innerText = "MULAI TONTON";
-                    statusDiv.innerText = "Gagal: " + (result.message || "Respons server bermasalah");
                 }
-            } catch (err) {
+            } catch (e) {
+                status.innerText = "Koneksi Gagal: " + e.message;
                 btn.disabled = false;
-                btn.innerText = "MULAI TONTON";
-                statusDiv.innerText = "Eror Koneksi: Pastikan jaringan Anda stabil.";
-                console.error(err);
-            }
-        }
-
-        // 3. Fungsi Klaim Poin Musik
-        async function claimPoints() {
-            const btn = document.getElementById('action-btn');
-            const statusDiv = document.getElementById('status');
-            btn.disabled = true;
-            btn.innerText = "Memproses Klaim...";
-
-            try {
-                const response = await fetch('/api/index.js?path=claim-points', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    statusDiv.style.color = "#4caf50";
-                    statusDiv.innerText = `🎉 ${result.message}`;
-                    btn.innerText = "SUKSES DIKLAIM ✔";
-
-                    // Tutup aplikasi otomatis dalam 2 detik
-                    setTimeout(() => {
-                        if (window.Telegram && window.Telegram.WebApp) {
-                            window.Telegram.WebApp.close();
-                        }
-                    }, 2000);
-                } else {
-                    btn.disabled = false;
-                    btn.innerText = "KLAIM EGG POINTS";
-                    statusDiv.innerText = "Gagal Klaim: " + result.message;
-                }
-            } catch (err) {
-                btn.disabled = false;
-                btn.innerText = "KLAIM EGG POINTS";
-                statusDiv.innerText = "Eror sistem saat mengklaim poin.";
             }
         }
     </script>
