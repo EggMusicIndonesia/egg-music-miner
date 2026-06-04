@@ -1,25 +1,48 @@
-const { Telegraf } = require('telegraf');
-const { createClient } = require('@supabase/supabase-js');
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Egg Music Miner</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    <h1>Egg Music Miner</h1>
+    <button id="mining-btn">▶️ MULAI MINING</button>
 
-module.exports = async (req, res) => {
-    if (req.body && req.body.update_id) return bot.handleUpdate(req.body, res);
+    <script>
+        // Inisialisasi Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
 
-    if (req.method === 'POST') {
-        const { telegram_id } = req.body;
+        const btn = document.getElementById('mining-btn');
 
-        // 1. Tambah Poin
-        const { data: user } = await supabase.from('user_progress').select('points').eq('telegram_id', telegram_id).single();
-        if (user) {
-            await supabase.from('user_progress').update({ points: user.points + 10 }).eq('telegram_id', telegram_id);
-        } else {
-            await supabase.from('user_progress').insert([{ telegram_id, points: 10 }]);
-        }
+        btn.addEventListener('click', async () => {
+            const userId = tg.initDataUnsafe?.user?.id;
+            
+            if (!userId) {
+                alert("Gagal mendapatkan ID User!");
+                return;
+            }
 
-        // 2. Ambil Link Video
-        const { data: task } = await supabase.from('music_tasks').select('stream_link').eq('id', 1).single();
-        return res.status(200).json({ stream_link: task ? task.stream_link : "dQw4w9WgXcQ" });
-    }
-};
+            // Mengirim data ke API
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: userId })
+                });
+
+                if (response.ok) {
+                    alert("Mining Berhasil! Saldo ditambah.");
+                } else {
+                    alert("Terjadi kesalahan pada server.");
+                }
+            } catch (error) {
+                alert("Gagal terhubung ke server.");
+            }
+        });
+    </script>
+</body>
+</html>
