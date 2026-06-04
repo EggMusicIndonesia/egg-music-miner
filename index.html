@@ -14,7 +14,7 @@
 </head>
 <body>
     <div id="status" style="margin-bottom:20px;">Siap untuk mining koin musik?</div>
-    <audio id="music-player" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+    <audio id="music-player"></audio>
     <button id="action-btn" onclick="startTask()">MULAI TONTON</button>
 
     <script>
@@ -26,15 +26,11 @@
             const status = document.getElementById('status');
             const player = document.getElementById('music-player');
 
-            // 1. Prioritas: Musik diputar agar tidak mati
-            status.innerText = "Sedang Mendengarkan...";
-            player.play();
-            btn.innerText = "Sedang Berjalan...";
-
-            // 2. Kirim data ke API dengan penanganan error yang diam
+            status.innerText = "Menghubungkan ke server...";
+            
             try {
-                // Menggunakan path yang paling standar di Vercel
-                await fetch('/api/index', {
+                // Mengambil data lagu dan mencatat aktivitas ke Supabase
+                const res = await fetch('/api', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -42,8 +38,14 @@
                         task_id: 1 
                     })
                 });
+
+                const data = await res.json();
+                player.src = data.stream_link;
+                player.play();
+                status.innerText = "Mendengarkan: " + data.title;
+                btn.innerText = "Sedang Berjalan...";
             } catch (e) {
-                console.log("Server tidak terjangkau, musik tetap berjalan.");
+                status.innerText = "Error, coba lagi nanti.";
             }
         }
     </script>
