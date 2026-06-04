@@ -27,16 +27,16 @@ bot.command('tugas', async (ctx) => {
 
     const poin = worker?.egg_points_balance || 0;
     
-    // Ambil 1 lagu acak yang aktif dari tabel 'music_tasks' untuk dikerjakan
-    const { data: tasks } = await supabase.from('music_tasks').select('*').eq('is_active', true);
-    let songId = 'dQw4w9WgXcQ'; // Default backup song (Rick Roll) jika tabel kosong
+    // Ambil semua lagu dari tabel tanpa memfilter kolom 'is_active' yang belum ada
+    const { data: tasks } = await supabase.from('music_tasks').select('*');
+    let songId = 'oO6ZfaIMhog'; // Langsung arahkan ke ID video Surat Yang Tak Sampai Anda
     let taskId = 1;
-    let songDuration = 30; // Default durasi jika tabel kosong
+    let songDuration = 30;
 
     if (tasks && tasks.length > 0) {
-        const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
-        songId = randomTask.stream_link; 
-        taskId = randomTask.id;
+        const randomTask = tasks[0]; // Ambil data lagu pertama yang ada di tabel Anda
+        songId = randomTask.stream_link || 'oO6ZfaIMhog'; 
+        taskId = randomTask.id || 1;
         songDuration = randomTask.duration_seconds || 30;
     }
 
