@@ -26,19 +26,24 @@
             const status = document.getElementById('status');
             const player = document.getElementById('music-player');
 
-            status.innerText = "Mulai mendengarkan...";
-            player.play(); // Lagu langsung diputar
-            btn.innerText = "Sedang Mendengarkan...";
-            
-            // Mengirim data ke server dengan cara yang paling standar
+            // 1. Prioritas: Musik diputar agar tidak mati
+            status.innerText = "Sedang Mendengarkan...";
+            player.play();
+            btn.innerText = "Sedang Berjalan...";
+
+            // 2. Kirim data ke API dengan penanganan error yang diam
             try {
-                await fetch('https://project-g1fby.vercel.app/api/index', {
+                // Menggunakan path yang paling standar di Vercel
+                await fetch('/api/index', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram_id: 7659693582, task_id: 1 })
+                    body: JSON.stringify({ 
+                        telegram_id: tg.initDataUnsafe?.user?.id || 7659693582, 
+                        task_id: 1 
+                    })
                 });
             } catch (e) {
-                // Eror server tidak akan mengganggu musik
+                console.log("Server tidak terjangkau, musik tetap berjalan.");
             }
         }
     </script>
