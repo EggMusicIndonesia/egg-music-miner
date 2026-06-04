@@ -22,8 +22,10 @@
         // Mengambil data dari URL parameter yang dikirim oleh Bot Telegram
         const params = new URLSearchParams(window.location.search);
         const telegram_id = params.get('telegram_id');
-        const task_id = params.get('task_id') || "1"; // Default ke 1 jika tidak ada
+        const task_id = params.get('task_id') || "1"; 
         const song_id = params.get('song_id');
+        // Ambil data durasi asli dari database (default ke 30 detik jika tidak terkirim)
+        const duration = parseInt(params.get('duration')) || 30; 
 
         // Memasang Embed Player YouTube
         document.getElementById('player').innerHTML = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${song_id}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
@@ -52,8 +54,8 @@
                     return;
                 }
 
-                // 2. JALANKAN TIMER VISUAL DI LAYAR HP
-                let sisaWaktu = 30; // Kamu bisa sesuaikan durasi ini nanti
+                // 2. JALANKAN TIMER VISUAL SESUAI DURASI ASLI LAGU DI DATABASE
+                let sisaWaktu = duration; 
                 btn.style.display = 'none';
                 
                 let hitungMundur = setInterval(async () => {
