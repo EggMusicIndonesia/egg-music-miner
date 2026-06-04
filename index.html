@@ -5,43 +5,50 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0b0e14; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
+        #player-container { display: none; margin-top: 20px; }
         #action-btn { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #ff9500; border: none; border-radius: 10px; color: white; }
     </style>
 </head>
 <body>
     <div id="status">Siap mining?</div>
-    <audio id="music-player"></audio>
+    <div id="player-container">
+        <iframe id="yt-player" width="100%" height="200" src="" frameborder="0" allow="autoplay"></iframe>
+        <div id="timer">Durasi: 30 detik</div>
+    </div>
     <button id="action-btn" onclick="startMining()">MULAI TONTON</button>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-
         async function startMining() {
             const btn = document.getElementById('action-btn');
             const status = document.getElementById('status');
-            const player = document.getElementById('music-player');
+            const container = document.getElementById('player-container');
+            
+            btn.style.display = 'none';
+            status.innerText = "Menyiapkan tugas...";
 
-            try {
-                const res = await fetch('/api', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        telegram_id: tg.initDataUnsafe?.user?.id || 7659693582, 
-                        task_id: 1 
-                    })
-                });
+            // Ambil link lagu dari API
+            const res = await fetch('/api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telegram_id: tg.initDataUnsafe?.user?.id || 7659693582, task_id: 1 })
+            });
+            const data = await res.json();
 
-                const data = await res.json();
-                if (data.stream_link) {
-                    player.src = data.stream_link;
-                    player.play();
-                    status.innerText = "Mendengarkan: " + data.title;
-                    btn.innerText = "Sedang Berjalan...";
+            // Tampilkan player
+            document.getElementById('yt-player').src = "https://www.youtube.com/embed/" + data.stream_link + "?autoplay=1";
+            container.style.display = 'block';
+
+            // Hitung mundur
+            let count = 30;
+            const timer = setInterval(() => {
+                count--;
+                document.getElementById('timer').innerText = "Sisa waktu: " + count + " detik";
+                if (count <= 0) {
+                    clearInterval(timer);
+                    status.innerText = "Mining Selesai! Poin ditambahkan.";
                 }
-            } catch (e) {
-                status.innerText = "Gagal terhubung ke database.";
-            }
+            }, 1000);
         }
     </script>
 </body>
