@@ -31,15 +31,17 @@ bot.command('tugas', async (ctx) => {
     const { data: tasks } = await supabase.from('music_tasks').select('*').eq('is_active', true);
     let songId = 'dQw4w9WgXcQ'; // Default backup song (Rick Roll) jika tabel kosong
     let taskId = 1;
+    let songDuration = 30; // Default durasi jika tabel kosong
 
     if (tasks && tasks.length > 0) {
         const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
-        songId = randomTask.stream_link; // Asumsi diisi ID video/link
+        songId = randomTask.stream_link; 
         taskId = randomTask.id;
+        songDuration = randomTask.duration_seconds || 30;
     }
 
-    // URL Web App diarahkan ke frontend kamu membawa data user dan task
-    const webAppUrl = `https://project-g1fby.vercel.app/?telegram_id=${userId}&task_id=${taskId}&song_id=${songId}`;
+    // URL Web App diperbarui dengan menambahkan parameter &duration
+    const webAppUrl = `https://project-g1fby.vercel.app/?telegram_id=${userId}&task_id=${taskId}&song_id=${songId}&duration=${songDuration}`;
 
     await ctx.reply(`📊 *Progres Anda*\n\n💰 Saldo: ${poin} Egg Points`, {
         parse_mode: 'Markdown',
@@ -66,7 +68,6 @@ module.exports = async (req, res) => {
     }
 
     // A. DETEKSI REQUEST DARI BOT TELEGRAM (Web-hook)
-    // Jika request datang dari Telegram (ada properti update_id), oper ke Telegraf
     if (req.body && req.body.update_id) {
         return bot.handleUpdate(req.body, res);
     }
@@ -138,6 +139,5 @@ module.exports = async (req, res) => {
         return res.status(200).json({ message: `Sukses! Poin bertambah +${task.points_reward}.` });
     }
 
-    // Default response jika hit URL tanpa parameter pas
     return res.status(200).json({ status: "ready", message: "Server API & Bot Egg Music berjalan seimbang!" });
 };
