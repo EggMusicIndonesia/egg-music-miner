@@ -66,14 +66,21 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST' && path === 'start-task') {
         const { telegram_id, task_id } = req.body;
-        const { data: existingLog } = await supabase.from('worker_logs').select('*').eq('telegram_id', telegram_id).eq('task_id', task_id).maybeSingle();
+        
+        // Konversi paksa ke angka murni agar Supabase int8 tidak menolak
+        const cleanTelegramId = parseInt(telegram_id, 10);
+        const cleanTaskId = parseInt(task_id, 10);
+
+        const { data: existingLog } = await supabase.from('worker_logs').select('*').eq('telegram_id', cleanTelegramId).eq('task_id', cleanTaskId).maybeSingle();
 
         if (existingLog && existingLog.status === 'COMPLETED') {
             return res.status(400).json({ message: "Kamu sudah menyelesaikan tugas ini hari ini!" });
         }
 
-        await supabase.from('worker_logs').delete().eq('telegram_id', telegram_id).eq('task_id', task_id);
-        const { error } = await supabase.from('worker_logs').insert([{ telegram_id, task_id, start_time: new Date(), status: 'STARTED' }]);
+        await supabase.from('worker_logs').delete().eq('telegram_id', cleanTelegramId).eq('task_id', cleanTaskId);
+        const { error } = await supabase.from('worker_logs').insert([
+            { telegram_id: cleanTelegramId, task_id: cleanTaskId, start_time: new Date(), status: 'STARTED' }
+        ]);
 
         if (error) return res.status(500).json({ error: error.message });
         return res.status(200).json({ message: "Task dicatat di server. Selamat mendengarkan!" });
@@ -81,8 +88,13 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST' && path === 'claim-points') {
         const { telegram_id, task_id } = req.body;
-        const { data: log } = await supabase.from('worker_logs').select('*').eq('telegram_id', telegram_id).eq('task_id', task_id).maybeSingle();
-        const { data: task } = await supabase.from('music_tasks').select('*').eq('id', task_id).maybeSingle();
+
+        // Konversi paksa ke angka murni agar Supabase int8 tidak menolak
+        const cleanTelegramId = parseInt(telegram_id, 10);
+        const cleanTaskId = parseInt(task_id, 10);
+
+        const { data: log } = await supabase.from('worker_logs').select('*').eq('telegram_id', cleanTelegramId).eq('task_id', cleanTaskId).maybeSingle();
+        const { data: task } = await supabase.from('music_tasks').select('*').eq('id', cleanTaskId).maybeSingle();
 
         if (!log || log.status !== 'STARTED') {
             return res.status(400).json({ message: "Task belum diinisialisasi atau sudah diklaim." });
@@ -101,9 +113,9 @@ module.exports = async (req, res) => {
 
         await supabase.from('worker_logs').update({ status: 'COMPLETED', end_time: currentTime, claimed_at: currentTime }).eq('id', log.id);
         
-        const { data: worker } = await supabase.from('workers').select('egg_points_balance').eq('telegram_id', telegram_id).maybeSingle();
-        const poinBaru = (worker?.egg_points_balance || 0) + task.points_reward;
-        await supabase.from('workers').update({ egg_points_balance: poinBaru }).eq('telegram_id', telegram_id);
+        const {data : worker } = await supabase . from ('workers' ) . select ('egg_points_balance' ) . eq ('telegram_id' , cleanTelegramId ) . maybeSingle () ; 
+        const poinBaru = (worker ?. egg_points_balance || 0 ) + task . points_reward ;
+        await supabase . from ('workers' ) . update ({egg_points_balance : poinBaru } ) . eq ('telegram_id' , cleanTelegramId ) ;
 
         return res.status(200).json({ message: `Sukses! Poin bertambah +${task.points_reward}.` });
     }
