@@ -27,7 +27,6 @@
             btn.style.display = 'none';
             status.innerText = "Menyiapkan tugas...";
 
-            // Ambil link lagu dari API
             const res = await fetch('/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -35,11 +34,9 @@
             });
             const data = await res.json();
 
-            // Tampilkan player
             document.getElementById('yt-player').src = "https://www.youtube.com/embed/" + data.stream_link + "?autoplay=1";
             container.style.display = 'block';
 
-            // Hitung mundur
             let count = 30;
             const timer = setInterval(() => {
                 count--;
