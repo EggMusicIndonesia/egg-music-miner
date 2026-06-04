@@ -58,124 +58,119 @@
     </style>
 </head>
 <body>
+    <div class="container">
+        <div id="player-container"></div>
+        <h3 id="info-title">Siap untuk mining koin musik?</h3>
+        <button id="action-btn" class="btn" onclick="startTask()">MULAI TONTON</button>
+        <div id="status">Klik tombol di atas untuk mengunci waktu mining.</div>
+    </div>
 
-<div class="container">
-    <div id="player-container"></div>
+    <script>
+        // 1. Inisialisasi SDK Telegram WebApp
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
 
-    <h3 id="info-title">Siap untuk mining koin musik?</h3>
-    
-    <button id="action-btn" class="btn" onclick="startTask()">MULAI TONTON</button>
-    <div id="status">Klik tombol di atas untuk mengunci waktu mining.</div>
-</div>
-
-<script>
-    // Ambil SDK Telegram WebApp
-    const tg = window.Telegram ? window.Telegram.WebApp : null;
-    if (tg) {
-        tg.ready();
-        tg.expand();
-    }
-
-    // Ambil ID user langsung dari sistem Telegram (Aman dari URL hilang)
-    const telegramId = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const taskId = urlParams.get('task_id') || '1';
-    const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
-    const duration = parseInt(urlParams.get('duration') || '30', 10);
-
-    // Tempel Video YouTube secara otomatis sesuai instruksi database
-    document.getElementById('player-container').innerHTML = `
-        <iframe src="https://www.youtube.com/embed/${songId}?enablejsapi=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    `;
-
-    // 2. Fungsi Mengunci Waktu (Mulai Tugas)
-    async function startTask() {
-        const btn = document.getElementById('action-btn');
-        const statusDiv = document.getElementById('status');
+        // Ambil ID user langsung dari sistem Telegram. Jika gagal, gunakan ID Anda sebagai backup aman.
+        const telegramId = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 7659693582;
         
-        btn.disabled = true;
-        btn.innerText = "Mengunci Waktu...";
-        statusDiv.innerText = "Menghubungkan ke server secure Vercel...";
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('task_id') || '1';
+        const songId = urlParams.get('song_id') || 'oO6ZfaIMhog';
+        const duration = parseInt(urlParams.get('duration') || '30', 10);
 
-        try {
-            const response = await fetch('/api/index.js?path=start-task', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
-            });
-            
-            const result = await response.json();
+        // Tempel Video YouTube secara otomatis
+        document.getElementById('player-container').innerHTML = `
+            <iframe src="https://www.youtube.com/embed/${songId}?enablejsapi=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        `;
 
-            if (response.ok) {
-                statusDiv.innerText = "Waktu terkunci! Musik sedang didengarkan...";
-                let waktuTersisa = duration;
-                
-                // Mulai Hitung Mundur Visual
-                const countdown = setInterval(() => {
-                    waktuTersisa--;
-                    btn.innerText = `SISA WAKTU: ${waktuTersisa}s`;
-                    
-                    if (waktuTersisa <= 0) {
-                        clearInterval(countdown);
-                        btn.disabled = false;
-                        btn.innerText = "KLAIM EGG POINTS";
-                        btn.setAttribute("onclick", "claimPoints()");
-                        statusDiv.innerText = "Waktu selesai! Silakan klaim poin Anda sekarang.";
-                    }
-                }, 1000);
-            } else {
+        // 2. Fungsi Mengunci Waktu (Mulai Tugas)
+        async function startTask() {
+            const btn = document.getElementById('action-btn');
+            const statusDiv = document.getElementById('status');
+            btn.disabled = true;
+            btn.innerText = "Mengunci Waktu...";
+            statusDiv.innerText = "Menghubungkan ke server secure Vercel...";
+
+            try {
+                const response = await fetch('/api/index.js?path=start-task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerText = "Waktu terkunci! Musik sedang didengarkan...";
+                    let waktuTersisa = duration;
+
+                    // Mulai Hitung Mundur Visual
+                    const countdown = setInterval(() => {
+                        waktuTersisa--;
+                        btn.innerText = `SISA WAKTU: ${waktuTersisa}s`;
+
+                        if (waktuTersisa <= 0) {
+                            clearInterval(countdown);
+                            btn.disabled = false;
+                            btn.innerText = "KLAIM EGG POINTS";
+                            btn.setAttribute("onclick", "claimPoints()");
+                            statusDiv.innerText = "Waktu selesai! Silakan klaim poin Anda sekarang.";
+                        }
+                    }, 1000);
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "MULAI TONTON";
+                    statusDiv.innerText = "Gagal: " + (result.message || "Respons server bermasalah");
+                }
+            } catch (err) {
                 btn.disabled = false;
                 btn.innerText = "MULAI TONTON";
-                statusDiv.innerText = "Gagal: " + (result.message || "Respons server bermasalah");
+                statusDiv.innerText = "Eror Koneksi: Pastikan jaringan Anda stabil.";
+                console.error(err);
             }
-        } catch (err) {
-            btn.disabled = false;
-            btn.innerText = "MULAI TONTON";
-            statusDiv.innerText = "Eror Koneksi: Pastikan jaringan Anda stabil.";
-            console.error(err);
         }
-    }
 
-    // 3. Fungsi Klaim Poin Musik
-    async function claimPoints() {
-        const btn = document.getElementById('action-btn');
-        const statusDiv = document.getElementById('status');
-        
-        btn.disabled = true;
-        btn.innerText = "Memproses Klaim...";
+        // 3. Fungsi Klaim Poin Musik
+        async function claimPoints() {
+            const btn = document.getElementById('action-btn');
+            const statusDiv = document.getElementById('status');
+            btn.disabled = true;
+            btn.innerText = "Memproses Klaim...";
 
-        try {
-            const response = await fetch('/api/index.js?path=claim-points', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
-            });
-            
-            const result = await response.json();
+            try {
+                const response = await fetch('/api/index.js?path=claim-points', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: telegramId, task_id: taskId })
+                });
 
-            if (response.ok) {
-                statusDiv.style.color = "#4caf50";
-                statusDiv.innerText = `🎉 ${result.message}`;
-                btn.innerText = "SUKSES DIKLAIM ✔";
-                
-                // Beritahu Telegram WebApp untuk menutup aplikasi secara otomatis dalam 2 detik
-                setTimeout(() => {
-                    if (window.Telegram && window.Telegram.WebApp) {
-                        window.Telegram.WebApp.close();
-                    }
-                }, 2000);
-            } else {
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.style.color = "#4caf50";
+                    statusDiv.innerText = `🎉 ${result.message}`;
+                    btn.innerText = "SUKSES DIKLAIM ✔";
+
+                    // Tutup aplikasi otomatis dalam 2 detik
+                    setTimeout(() => {
+                        if (window.Telegram && window.Telegram.WebApp) {
+                            window.Telegram.WebApp.close();
+                        }
+                    }, 2000);
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "KLAIM EGG POINTS";
+                    statusDiv.innerText = "Gagal Klaim: " + result.message;
+                }
+            } catch (err) {
                 btn.disabled = false;
                 btn.innerText = "KLAIM EGG POINTS";
-                statusDiv.innerText = "Gagal Klaim: " + result.message;
+                statusDiv.innerText = "Eror sistem saat mengklaim poin.";
             }
-        } catch (err) {
-            btn.disabled = false;
-            btn.innerText = "KLAIM EGG POINTS";
-            statusDiv.innerText = "Eror sistem saat mengklaim poin.";
         }
-    }
-</script>
+    </script>
 </body>
 </html>
