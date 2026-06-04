@@ -3,37 +3,92 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>body{background:#000;color:#fff;text-align:center;font-family:sans-serif;padding:20px;}</style>
+    <style>
+        body { background: #000; color: #fff; text-align: center; font-family: sans-serif; padding: 20px; }
+        .btn-mining { padding: 15px 30px; background: green; color: white; border: none; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 8px; }
+        .btn-disabled { background: #555; cursor: not-allowed; }
+    </style>
 </head>
 <body>
+
     <div id="player"></div>
-    <h3 id="timer">Siap untuk mining?</h3>
-    <button id="btn" onclick="start()" style="padding:15px; background:green; color:white; border:none;">MULAI TONTON</button>
+    <h3 id="timer">Siap untuk mining koin musik?</h3>
+    <button id="btn" class="btn-mining" onclick="mulaiMining()">MULAI TONTON</button>
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.ready();
+
+        // Mengambil data dari URL parameter yang dikirim oleh Bot Telegram
         const params = new URLSearchParams(window.location.search);
-        const userId = params.get('telegram_id');
-        const songId = params.get('song_id');
+        const telegram_id = params.get('telegram_id');
+        const task_id = params.get('task_id') || "1"; // Default ke 1 jika tidak ada
+        const song_id = params.get('song_id');
 
-        // Embed Video
-        document.getElementById('player').innerHTML = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${songId}?autoplay=1"></iframe>`;
+        // Memasang Embed Player YouTube
+        document.getElementById('player').innerHTML = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${song_id}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 
-        function start() {
-            document.getElementById('btn').style.display = 'none';
-            let sisa = 30;
-            let i = setInterval(async () => {
-                sisa--;
-                document.getElementById('timer').innerText = "Mining sisa: " + sisa + " detik";
-                if(sisa <= 0) {
-                    clearInterval(i);
-                    // Kirim ke Supabase
-                    await fetch('/api/complete', { method: 'POST', body: JSON.stringify({ userId, songId }) });
-                    alert("Tugas selesai! Poin dikirim.");
-                    tg.close();
+        async function mulaiMining() {
+            const btn = document.getElementById('btn');
+            btn.disabled = true;
+            btn.className = "btn-mining btn-disabled";
+            btn.innerText = "Mengunci Waktu...";
+
+            try {
+                // 1. LAPOR KE BACKEND KALAU WORKER BARU MULAI (ANTI-CHEAT START)
+                const responStart = await fetch(`/api?path=start-task`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: parseInt(telegram_id), task_id: parseInt(task_id) })
+                });
+
+                const dataStart = await responStart.json();
+
+                if (!responStart.ok) {
+                    alert(dataStart.message || "Gagal memulai tugas.");
+                    btn.disabled = false;
+                    btn.className = "btn-mining";
+                    btn.innerText = "MULAI TONTON";
+                    return;
                 }
-            }, 1000);
+
+                // 2. JALANKAN TIMER VISUAL DI LAYAR HP
+                let sisaWaktu = 30; // Kamu bisa sesuaikan durasi ini nanti
+                btn.style.display = 'none';
+                
+                let hitungMundur = setInterval(async () => {
+                    sisaWaktu--;
+                    document.getElementById('timer').innerText = `Mining sisa: ${sisaWaktu} detik`;
+
+                    if (sisaWaktu <= 0) {
+                        clearInterval(hitungMundur);
+                        document.getElementById('timer').innerText = "Memverifikasi durasi menonton...";
+
+                        // 3. TIMER SELESAI, KLAIM POIN KE SERVER (VERIFIKASI REAL-TIME)
+                        const responClaim = await fetch(`/api?path=claim-points`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ telegram_id: parseInt(telegram_id), task_id: parseInt(task_id) })
+                        });
+
+                        const dataClaim = await responClaim.json();
+
+                        if (responClaim.ok) {
+                            alert("Sukses! Tugas selesai dan poin aman masuk ke saldo kamu.");
+                        } else {
+                            alert(`Gagal: ${dataClaim.message}`);
+                        }
+                        
+                        tg.close(); // Tutup Mini App otomatis setelah selesai
+                    }
+                }, 1000);
+
+            } catch (error) {
+                alert("Terjadi kesalahan jaringan/server.");
+                btn.disabled = false;
+                btn.className = "btn-mining";
+                btn.innerText = "MULAI TONTON";
+            }
         }
     </script>
 </body>
